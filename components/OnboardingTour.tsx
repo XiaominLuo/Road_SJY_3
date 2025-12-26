@@ -1,6 +1,6 @@
 
 import React, { useState, useLayoutEffect, useEffect, useRef } from 'react';
-import { ShieldCheck, Layers, UploadCloud, Milestone, MousePointerClick, ChevronRight, Check, MousePointer2, Table2, Info, XCircle } from 'lucide-react';
+import { ShieldCheck, Layers, UploadCloud, Milestone, MousePointerClick, ChevronRight, Check, MousePointer2, Table2, XCircle } from 'lucide-react';
 
 interface OnboardingTourProps {
   onComplete: () => void;
