@@ -449,7 +449,7 @@ export default function App() {
         <MapController onMoveEnd={(loc) => setCurrentLocation(loc)} targetLocation={targetLocation} />
         <LayersControl position="bottomright">
             <LayersControl.BaseLayer checked name="Esri World Imagery"> <TileLayer attribution='Tiles &copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" maxNativeZoom={19} maxZoom={22} /> </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Jilin-1 Satellite"> <TileLayer attribution='&copy; Jilin-1' url="https://api.jl1mall.com/getTile/{z}/{x}/{y}" maxNativeZoom={18} maxZoom={22} /> </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Jilin-1 Satellite"> <TileLayer attribution='&copy; 吉林一号' url="https://api.jl1mall.com/getMap/{z}/{x}/{-y}?mk=3ddec00f5f435270285ffc7ad1a60ce5&tk=90c63bb328950455b770400257ad882a" tms={true} maxNativeZoom={20} maxZoom={22} /> </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Google Satellite"> <TileLayer attribution='&copy; Google' url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" maxNativeZoom={20} maxZoom={22} /> </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Tianditu Satellite"> <TileLayer attribution='&copy; Tianditu' url="https://t{s}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=4267820f43926eaf808d61dc07269beb" subdomains="01234567" maxNativeZoom={18} maxZoom={22} /> </LayersControl.BaseLayer>
             {referenceLayers.map(layer => ( <LayersControl.Overlay checked key={layer.id} name={layer.name}> <GeoJSON data={layer.data} style={{ color: '#ec4899', weight: 2, fillOpacity: 0.1 }} /> </LayersControl.Overlay> ))}
