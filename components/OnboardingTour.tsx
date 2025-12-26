@@ -10,13 +10,13 @@ interface OnboardingTourProps {
 const InteractionDemo = () => {
     /**
      * Sequence Steps:
-     * 0: Initial State
+     * 0: Initial State (Invisible/Hidden)
      * 1: Cursor moves to Table (Bottom Left)
-     * 2: Click Table Row (Flash) -> SHOW PINK HIGHLIGHT
+     * 2: Click Table Row -> SHOW PINK HIGHLIGHT + OPACITY 100
      * 3: Map Fly Animation (Background pans/scales) -> KEEP PINK HIGHLIGHT
      * 4: Map Focused, Cursor moves to Grid Cell in center -> KEEP PINK HIGHLIGHT
-     * 5: Click 1 (Single Click) -> State: No Road (Green/0)
-     * 6: Click 2 (Second Click) -> State: Road (Red/1)
+     * 5: Click 1 (Single Click) -> State: No Road (Bright Green/0)
+     * 6: Click 2 (Second Click) -> State: Road (Bright Red/1)
      * 7: Reset Loop after a delay
      */
     const [step, setStep] = useState(0);
@@ -25,8 +25,8 @@ const InteractionDemo = () => {
         const sequence = [
             { t: 800, s: 1 },  // Move to table
             { t: 400, s: 2 },  // Click table (Pink highlight starts)
-            { t: 200, s: 3 },  // Fly/Pan start
-            { t: 1000, s: 4 }, // Arrived at Grid, move cursor to cell
+            { t: 200, s: 3 },  // Pan animation start
+            { t: 1000, s: 4 }, // Arrived, cursor moves to cell center
             { t: 800, s: 5 },  // Click 1 (No Road - Green 0)
             { t: 1000, s: 6 }, // Click 2 (Road - Red 1)
             { t: 2000, s: 0 }, // Reset
@@ -51,24 +51,37 @@ const InteractionDemo = () => {
     const isClickDown = step === 2 || step === 5 || step === 6;
     const isPanning = step >= 3;
     const isAtCell = step >= 4;
+    const isActive = step >= 2; // When cell is "active" (clicked in table)
 
-    // Grid Cell State logic
-    let cellStyle = "border-white/20 bg-white/5";
+    // Cell Styling Variables
+    let cellBorderStyle = "rgba(255,255,255,0.2)";
+    let cellBgStyle = "rgba(255,255,255,0.05)";
+    let cellShadow = "none";
     let cellText = "";
+    let borderWidth = "1px";
 
     // Step 2, 3, 4: Selected Highlight (Pink)
     if (step >= 2 && step <= 4) {
-        cellStyle = "border-[#ec4899] border-4 bg-[#ec4899]/30 shadow-[0_0_20px_rgba(236,72,153,0.4)]";
+        cellBorderStyle = "#ec4899";
+        cellBgStyle = "rgba(236,72,153,0.3)";
+        cellShadow = "0 0 25px rgba(236,72,153,0.6)";
+        borderWidth = "6px";
     } 
-    // Step 5: No Road (Green)
+    // Step 5: No Road (Solid Bright Green)
     else if (step === 5) {
-        cellStyle = "bg-[#22c55e]/50 border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)]";
+        cellBorderStyle = "#22c55e";
+        cellBgStyle = "#22c55e"; // Solid for clarity in demo
+        cellShadow = "0 0 20px rgba(34,197,94,0.5)";
         cellText = "0";
+        borderWidth = "2px";
     } 
-    // Step 6+: Road (Red)
+    // Step 6+: Road (Solid Bright Red)
     else if (step >= 6) {
-        cellStyle = "bg-[#ef4444]/50 border-[#ef4444] shadow-[0_0_15px_rgba(239,68,68,0.3)]";
+        cellBorderStyle = "#ef4444";
+        cellBgStyle = "#ef4444"; // Solid for clarity in demo
+        cellShadow = "0 0 20px rgba(239,68,68,0.5)";
         cellText = "1";
+        borderWidth = "2px";
     }
 
     return (
@@ -84,26 +97,37 @@ const InteractionDemo = () => {
                 ></div>
 
                 {/* Target Cell (ID: 88) */}
-                <div className={`relative w-24 h-24 border transition-all duration-300 flex flex-col items-center justify-center gap-1 z-10 ${cellStyle} ${isPanning ? 'translate-x-[-120px] translate-y-[40px] scale-125' : 'translate-x-[40px] translate-y-[-20px] opacity-20'}`}>
-                    <span className="text-[9px] text-white font-black bg-black/60 px-1 py-0.5 rounded leading-none">ID: 88</span>
+                <div 
+                    className={`absolute w-24 h-24 transition-all duration-300 flex flex-col items-center justify-center gap-1 z-10 
+                        ${isPanning ? 'translate-x-[calc(50%-48px-120px)] translate-y-[calc(50%-48px+40px)] scale-125' : 'translate-x-[120px] translate-y-[40px]'} 
+                        ${isActive ? 'opacity-100' : 'opacity-20'}`}
+                    style={{
+                        top: '0',
+                        left: '0',
+                        border: `${borderWidth} solid ${cellBorderStyle}`,
+                        backgroundColor: cellBgStyle,
+                        boxShadow: cellShadow
+                    }}
+                >
+                    <span className="text-[10px] text-white font-black bg-black/70 px-1.5 py-0.5 rounded leading-none shadow-sm">ID: 88</span>
                     {cellText && (
-                        <span className="text-2xl font-mono font-black animate-in zoom-in duration-300 text-white">
+                        <span className="text-4xl font-mono font-black animate-in zoom-in duration-300 text-white drop-shadow-lg">
                             {cellText}
                         </span>
                     )}
-                    {step === 3 && <div className="absolute inset-0 border-2 border-white animate-ping"></div>}
+                    {step === 3 && <div className="absolute inset-0 border-4 border-white animate-ping"></div>}
                 </div>
 
                 {/* Mock Attribute Table (Left Bottom Floating Window) */}
-                <div className={`absolute bottom-3 left-3 w-32 bg-slate-900/90 backdrop-blur-md border rounded-lg overflow-hidden transition-all duration-300 z-20 ${isCursorOnTable ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-105' : 'border-slate-700'}`}>
-                    <div className="bg-slate-800 px-2 py-1 text-[8px] font-bold text-slate-400 flex items-center gap-1">
-                        <Table2 className="w-2.5 h-2.5" /> 属性表
+                <div className={`absolute bottom-3 left-3 w-32 bg-slate-900/95 backdrop-blur-md border rounded-lg overflow-hidden transition-all duration-300 z-20 ${isCursorOnTable ? 'border-emerald-500 ring-4 ring-emerald-500/20 scale-105 shadow-xl' : 'border-slate-700'}`}>
+                    <div className="bg-slate-800 px-2 py-1.5 text-[9px] font-black text-slate-300 flex items-center gap-1.5">
+                        <Table2 className="w-3 h-3 text-emerald-500" /> 属性表
                     </div>
-                    <div className="p-1 space-y-1">
+                    <div className="p-1.5 space-y-1.5">
                         {[87, 88, 89].map((id) => (
-                            <div key={id} className={`px-1.5 py-1 rounded text-[9px] font-mono flex items-center justify-between transition-colors ${id === 88 && isCursorOnTable ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500'}`}>
+                            <div key={id} className={`px-2 py-1 rounded text-[10px] font-mono flex items-center justify-between transition-colors ${id === 88 && isCursorOnTable ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/30' : 'text-slate-500'}`}>
                                 <span>#{id}</span>
-                                {id === 88 && isCursorOnTable && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                                {id === 88 && isCursorOnTable && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.7)]" />}
                             </div>
                         ))}
                     </div>
@@ -111,12 +135,12 @@ const InteractionDemo = () => {
 
                 {/* Status Toast */}
                 {step === 5 && (
-                    <div className="absolute top-4 right-4 bg-green-500 text-white text-[10px] font-black px-3 py-1 rounded shadow-xl animate-in slide-in-from-right">
+                    <div className="absolute top-4 right-4 bg-green-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
                         标注状态: 0 (无路)
                     </div>
                 )}
                 {step === 6 && (
-                    <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded shadow-xl animate-in slide-in-from-right">
+                    <div className="absolute top-4 right-4 bg-red-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
                         标注状态: 1 (有路)
                     </div>
                 )}
@@ -125,14 +149,14 @@ const InteractionDemo = () => {
                 <div 
                     className="absolute transition-all duration-500 ease-in-out z-40"
                     style={{
-                        top: isCursorOnTable ? '85%' : (isAtCell ? '50%' : '10%'),
-                        left: isCursorOnTable ? '15%' : (isAtCell ? '50%' : '10%'),
-                        transform: `scale(${isClickDown ? 0.7 : 1})`,
+                        top: isCursorOnTable ? '82%' : (isAtCell ? '50%' : '15%'),
+                        left: isCursorOnTable ? '18%' : (isAtCell ? '50%' : '15%'),
+                        transform: `translate(-10%, -10%) scale(${isClickDown ? 0.75 : 1})`,
                         opacity: step === 0 ? 0 : 1
                     }}
                 >
-                    <MousePointer2 className="w-8 h-8 text-white drop-shadow-2xl fill-black" strokeWidth={1.5} />
-                    {isClickDown && <div className="absolute -top-4 -left-4 w-16 h-16 bg-white/40 rounded-full animate-ping"></div>}
+                    <MousePointer2 className="w-10 h-10 text-white drop-shadow-2xl fill-black" strokeWidth={1.5} />
+                    {isClickDown && <div className="absolute -top-4 -left-4 w-16 h-16 bg-white/60 rounded-full animate-ping"></div>}
                 </div>
             </div>
         </div>
@@ -261,7 +285,7 @@ function DemoContentWrapper() {
                         定位技巧：点击属性表行
                     </div>
                     <p className="text-[11px] text-emerald-700 leading-relaxed font-medium">
-                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑定位目标网格，并以<span className="text-pink-600 font-bold">粉色高亮</span>该目标，助您精准定位任务目标。
+                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑定位目标网格并将其高亮，助您精准定位任务目标。
                     </p>
                 </div>
 
@@ -272,10 +296,10 @@ function DemoContentWrapper() {
                             <div className="text-[11px] font-black text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100 inline-block">道路标注模式</div>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm"></div> 1次: 无路 (0)
+                                    <div className="w-6 h-2 rounded-sm bg-green-500 shadow-sm"></div> 1次: 无路 (0)
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm"></div> 2次: 有路 (1)
+                                    <div className="w-6 h-2 rounded-sm bg-red-500 shadow-sm"></div> 2次: 有路 (1)
                                 </div>
                             </div>
                         </div>
@@ -285,10 +309,10 @@ function DemoContentWrapper() {
                             <div className="text-[11px] font-black text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-100 inline-block">建筑标注模式</div>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-2.5 h-2.5 border-2 border-blue-500 bg-transparent rounded-[2px] shadow-sm"></div> 1次: 无建筑 (0)
+                                    <div className="w-6 h-2 border-2 border-blue-500 bg-transparent rounded-[2px] shadow-sm"></div> 1次: 无建筑 (0)
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-2.5 h-2.5 border-2 border-yellow-400 bg-transparent rounded-[2px] shadow-sm"></div> 2次: 有建筑 (1)
+                                    <div className="w-6 h-2 border-2 border-yellow-400 bg-transparent rounded-[2px] shadow-sm"></div> 2次: 有建筑 (1)
                                 </div>
                             </div>
                         </div>

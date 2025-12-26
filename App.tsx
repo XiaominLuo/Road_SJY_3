@@ -353,7 +353,6 @@ export default function App() {
       let polygonsToAdd: any[] = []; let referenceFeatures: any[] = [];
       const findIdKey = (feats: any[]) => {
           if (!feats || feats.length === 0) return "";
-          // 优化 ID 识别候选列表，增加常见地理信息系统字段名
           const candidates = [
             'FID', 'fid', 'OBJECTID', 'objectid', 'FID_1', 'OBJECTID_1', 'ID', 'id', 'Id', 
             'INDEX', 'index', 'NO', 'no', 'UUID', 'uuid', 'GUID', 'guid'
@@ -361,13 +360,12 @@ export default function App() {
           const sampleSize = Math.min(feats.length, 10);
           for (const key of candidates) { for (let i = 0; i < sampleSize; i++) { if (feats[i].properties && key in feats[i].properties) return key; } }
           const allKeys = Object.keys(feats[0].properties || {});
-          // 如果常规候选失效，尝试模糊匹配包含 ID 或 FID 字符的键
           return allKeys.find(k => k.toLowerCase().includes('id') || k.toLowerCase().includes('fid')) || "";
       };
       let sampleFeats = Array.isArray(geojson) ? (geojson[0]?.features || geojson) : (geojson.features || [geojson]);
       const detectedIdKeyName = findIdKey(sampleFeats);
       
-      let featureIndex = 0; // 用于顺序编号的索引
+      let featureIndex = 0; 
       const traverse = (obj: any) => {
         if (!obj) return;
         if (obj.type === 'FeatureCollection' && Array.isArray(obj.features)) obj.features.forEach(traverse);
@@ -376,7 +374,6 @@ export default function App() {
           featureIndex++;
           const geomType = obj.geometry?.type;
           
-          // ID 分配逻辑： 识别到的字段 > 原有 id > 原有 ID 属性 > 顺序数字
           if (detectedIdKeyName && obj.properties && obj.properties[detectedIdKeyName] !== undefined) {
               obj.id = String(obj.properties[detectedIdKeyName]);
           } else if (obj.properties?.id !== undefined) {
@@ -384,7 +381,6 @@ export default function App() {
           } else if (obj.properties?.ID !== undefined) {
               obj.id = String(obj.properties.ID);
           } else {
-              // 最终兜底：使用 1, 2, 3... 这样的干净顺序编号
               obj.id = String(featureIndex);
           }
 
@@ -465,10 +461,10 @@ export default function App() {
       {/* Top Stats Strip */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none flex flex-col items-center gap-2"> 
         <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg border border-slate-200 flex items-center gap-4 text-xs font-bold text-slate-700"> 
-          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 rounded-sm bg-red-500"></div><span>有路: {stats.roadCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 rounded-sm bg-green-500"></div><span>无路: {stats.noRoadCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 border-2 border-yellow-400 bg-transparent rounded-[2px]"></div><span>有建筑: {stats.buildingCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 border-2 border-blue-500 bg-transparent rounded-[2px]"></div><span>无建筑: {stats.noBuildingCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 rounded-sm bg-red-500"></div><span>有路: {stats.roadCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 rounded-sm bg-green-500"></div><span>无路: {stats.noRoadCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 border-2 border-yellow-400 bg-transparent rounded-[2px]"></div><span>有建筑: {stats.buildingCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 border-2 border-blue-500 bg-transparent rounded-[2px]"></div><span>无建筑: {stats.noBuildingCount}</span></div> 
         </div> 
       </div>
 
@@ -479,7 +475,7 @@ export default function App() {
         </button> 
 
         {taskProgress && ( 
-          <div className="bg-white/95 w-28 rounded-2xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden"> 
+          <div className="bg-white/95 w-32 rounded-2xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden"> 
             <div className="px-3 py-2.5 flex items-center justify-between border-b cursor-pointer" onClick={() => setIsTaskProgressExpanded(!isTaskProgressExpanded)}> 
               <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /><span className="text-[10px] font-bold text-slate-700 truncate">进度</span></div> 
               {isTaskProgressExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} 
@@ -487,11 +483,17 @@ export default function App() {
             {isTaskProgressExpanded && ( 
               <div className="p-3 space-y-3"> 
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[9px] font-bold text-slate-500"><span>Road</span><span>{taskProgress.markedRoad}</span></div>
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-500">
+                    <div className="flex items-center gap-1"><div className="w-6 h-1.5 rounded-sm bg-red-500"></div>Road</div>
+                    <span>{taskProgress.markedRoad}</span>
+                  </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-red-500 transition-all" style={{ width: `${(taskProgress.markedRoad/taskProgress.total)*100}%` }}></div></div>
                 </div> 
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[9px] font-bold text-slate-500"><span>Build</span><span>{taskProgress.markedBuilding}</span></div>
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-500">
+                    <div className="flex items-center gap-1"><div className="w-6 h-1.5 border border-yellow-400 bg-transparent rounded-[1px]"></div>Build</div>
+                    <span>{taskProgress.markedBuilding}</span>
+                  </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-yellow-500 transition-all" style={{ width: `${(taskProgress.markedBuilding/taskProgress.total)*100}%` }}></div></div>
                 </div> 
               </div> 
@@ -501,7 +503,7 @@ export default function App() {
 
         {/* Attribute Table (Aligned with Task Progress Width) */}
         {attributeTableData && ( 
-          <div className={`bg-white/95 shadow-2xl border border-slate-200 rounded-xl overflow-hidden flex flex-col transition-all w-28 ${isTableOpen ? 'h-[400px]' : 'h-10'}`}> 
+          <div className={`bg-white/95 shadow-2xl border border-slate-200 rounded-xl overflow-hidden flex flex-col transition-all w-32 ${isTableOpen ? 'h-[400px]' : 'h-10'}`}> 
             <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b cursor-pointer" onClick={() => setIsTableOpen(!isTableOpen)}> 
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 shrink-0"><Table2 className="w-4 h-4 text-emerald-600 shrink-0" /><span className="truncate">属性</span></div> 
               <Minimize2 className="w-3 h-3" /> 
@@ -522,18 +524,18 @@ export default function App() {
                             <td className="px-1 py-1.5">
                                 <div className="flex items-center justify-center gap-1">
                                     {rs === 1 ? (
-                                        <><div className="w-4 h-2 rounded-sm bg-red-500 shrink-0"></div><span className="text-[9px]">1</span></>
+                                        <><div className="w-6 h-2 rounded-sm bg-red-500 shrink-0"></div><span className="text-[9px]">1</span></>
                                     ) : rs === 2 ? (
-                                        <><div className="w-4 h-2 rounded-sm bg-green-500 shrink-0"></div><span className="text-[9px]">0</span></>
+                                        <><div className="w-6 h-2 rounded-sm bg-green-500 shrink-0"></div><span className="text-[9px]">0</span></>
                                     ) : <span className="text-slate-200">-</span>}
                                 </div>
                             </td> 
                             <td className="px-1 py-1.5">
                                 <div className="flex items-center justify-center gap-1">
                                     {bs === 1 ? (
-                                        <><div className="w-4 h-2 border-[1.5px] border-yellow-400 rounded-sm shrink-0"></div><span className="text-[9px]">1</span></>
+                                        <><div className="w-6 h-2 border-[1.5px] border-yellow-400 rounded-sm shrink-0"></div><span className="text-[9px]">1</span></>
                                     ) : bs === 2 ? (
-                                        <><div className="w-4 h-2 border-[1.5px] border-blue-500 rounded-sm shrink-0"></div><span className="text-[9px]">0</span></>
+                                        <><div className="w-6 h-2 border-[1.5px] border-blue-500 rounded-sm shrink-0"></div><span className="text-[9px]">0</span></>
                                     ) : <span className="text-slate-200">-</span>}
                                 </div>
                             </td> 
@@ -605,13 +607,13 @@ export default function App() {
             onClick={() => setLabelMode('road')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'road' ? 'bg-red-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-4 h-2.5 rounded-sm ${labelMode === 'road' ? 'bg-white' : 'bg-red-500'}`}></div> 标路
+            <div className={`w-6 h-2.5 rounded-sm ${labelMode === 'road' ? 'bg-white' : 'bg-red-500'}`}></div> 标路
           </button> 
           <button 
             onClick={() => setLabelMode('building')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'building' ? 'bg-yellow-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-4 h-2.5 border-2 rounded-[2px] ${labelMode === 'building' ? 'border-white' : 'border-yellow-400 bg-transparent'}`}></div> 标建筑
+            <div className={`w-6 h-2.5 border-2 rounded-[2px] ${labelMode === 'building' ? 'border-white' : 'border-yellow-400 bg-transparent'}`}></div> 标建筑
           </button> 
         </div> 
       </div>
