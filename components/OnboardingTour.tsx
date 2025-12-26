@@ -18,7 +18,8 @@ const InteractionDemo = () => {
      * 5: Click 1 (No Road - Green)
      * 6: Click 2 (Road - Red)
      * 7: Click 3 (Cancel - Transparent/Default) -> Show "取消标注"
-     * 8: Reset
+     * 8: Move cursor away (Idle finish)
+     * 9: Reset
      */
     const [step, setStep] = useState(0);
     const GRID_SIZE = 64; // 对齐网格大小
@@ -32,7 +33,8 @@ const InteractionDemo = () => {
             { t: 800, s: 5 },  // 点击1: 绿色 (无路)
             { t: 1000, s: 6 }, // 点击2: 红色 (有路)
             { t: 1000, s: 7 }, // 点击3: 取消标注 (恢复默认)
-            { t: 2500, s: 0 }, // 重置循环
+            { t: 1000, s: 8 }, // 标注完成，光标移开展示结果
+            { t: 3500, s: 0 }, // 长停顿后重置循环
         ];
 
         let timeoutId: any;
@@ -51,9 +53,11 @@ const InteractionDemo = () => {
     }, []);
 
     const isCursorOnTable = step === 1 || step === 2;
+    // 仅在步骤2, 5, 6, 7触发点击视觉缩放效果
     const isClickDown = step === 2 || step === 5 || step === 6 || step === 7;
     const isPanning = step === 3;
-    const isAtCell = step >= 4;
+    const isAtCell = step >= 4 && step <= 7;
+    const isIdleFinish = step === 8;
     const isActive = step >= 2; // 网格被激活（点击属性表后）
 
     // Cell Styling Variables
@@ -63,11 +67,11 @@ const InteractionDemo = () => {
     let cellText = "";
     let borderWidth = "1px";
 
-    // Step 2-4: Pink Highlight
-    if (step >= 2 && step <= 4) {
+    // Step 2-4 & 7-8: Highlight States (Pink border, varying fills)
+    if ((step >= 2 && step <= 4) || step >= 7) {
         cellBorderStyle = "#ec4899"; 
-        cellBgStyle = "rgba(236,72,153,0.3)";
-        cellShadow = "0 0 30px rgba(236,72,153,0.5)";
+        cellBgStyle = step >= 7 ? "rgba(255,255,255,0.03)" : "rgba(236,72,153,0.3)";
+        cellShadow = step >= 7 ? "none" : "0 0 30px rgba(236,72,153,0.5)";
         borderWidth = "4px";
     } 
     // Step 5: Marked No Road (Green)
@@ -85,14 +89,6 @@ const InteractionDemo = () => {
         cellShadow = "0 0 20px rgba(239,68,68,0.4)";
         cellText = "1";
         borderWidth = "2px";
-    }
-    // Step 7: Cancel (Back to default highlight style or transparent)
-    else if (step === 7) {
-        cellBorderStyle = "#ec4899"; // 返回选中状态的粉色边框，但无填充
-        cellBgStyle = "rgba(255,255,255,0.03)";
-        cellShadow = "none";
-        cellText = "";
-        borderWidth = "4px";
     }
 
     return (
@@ -165,12 +161,12 @@ const InteractionDemo = () => {
                     </div>
                 )}
 
-                {/* Cursor */}
+                {/* Cursor Implementation */}
                 <div 
-                    className="absolute transition-all duration-500 ease-in-out z-40"
+                    className="absolute transition-all duration-700 ease-in-out z-40"
                     style={{
-                        top: isCursorOnTable ? '80%' : (isAtCell ? '50%' : '20%'),
-                        left: isCursorOnTable ? '20%' : (isAtCell ? '50%' : '80%'),
+                        top: isCursorOnTable ? '80%' : (isAtCell ? '50%' : (isIdleFinish ? '30%' : '10%')),
+                        left: isCursorOnTable ? '20%' : (isAtCell ? '50%' : (isIdleFinish ? '70%' : '90%')),
                         transform: `translate(-10%, -10%) scale(${isClickDown ? 0.8 : 1})`,
                         opacity: step === 0 ? 0 : 1
                     }}
