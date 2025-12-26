@@ -11,25 +11,25 @@ const InteractionDemo = () => {
     /**
      * Sequence Steps:
      * 0: Initial State (Invisible/Hidden)
-     * 1: Cursor moves to Table (Bottom Left)
+     * 1: Cursor moves to Table Row (Bottom Left)
      * 2: Click Table Row -> SHOW PINK HIGHLIGHT + OPACITY 100
-     * 3: Map Fly Animation (Background pans/scales) -> KEEP PINK HIGHLIGHT
-     * 4: Map Focused, Cursor moves to Grid Cell in center -> KEEP PINK HIGHLIGHT
-     * 5: Click 1 (Single Click) -> State: No Road (Bright Green/0)
-     * 6: Click 2 (Second Click) -> State: Road (Bright Red/1)
+     * 3: Map Fly Animation (Background pans) -> KEEP PINK HIGHLIGHT
+     * 4: Map Focused, Cursor moves to Grid Cell center
+     * 5: Click 1 (First Click on Cell) -> State: No Road (Green) + Toast: "标注无道路"
+     * 6: Click 2 (Second Click on Cell) -> State: Road (Red) + Toast: "标注有道路"
      * 7: Reset Loop after a delay
      */
     const [step, setStep] = useState(0);
 
     useEffect(() => {
         const sequence = [
-            { t: 800, s: 1 },  // Move to table
-            { t: 400, s: 2 },  // Click table (Pink highlight starts)
-            { t: 200, s: 3 },  // Pan animation start
-            { t: 1000, s: 4 }, // Arrived, cursor moves to cell center
-            { t: 800, s: 5 },  // Click 1 (No Road - Green 0)
-            { t: 1000, s: 6 }, // Click 2 (Road - Red 1)
-            { t: 2000, s: 0 }, // Reset
+            { t: 800, s: 1 },  // Cursor moves to table row
+            { t: 600, s: 2 },  // Click table row (Pink highlight appears)
+            { t: 400, s: 3 },  // Start panning animation
+            { t: 1000, s: 4 }, // Panning finished, move cursor to cell center
+            { t: 800, s: 5 },  // Click 1: turns Green ("标注无道路")
+            { t: 1000, s: 6 }, // Click 2: turns Red ("标注有道路")
+            { t: 2500, s: 0 }, // Long pause then Reset
         ];
 
         let timeoutId: any;
@@ -60,25 +60,25 @@ const InteractionDemo = () => {
     let cellText = "";
     let borderWidth = "1px";
 
-    // Step 2, 3, 4: Selected Highlight (Pink)
+    // Step 2-4: Selected Highlight (Pink)
     if (step >= 2 && step <= 4) {
-        cellBorderStyle = "#ec4899";
+        cellBorderStyle = "#ec4899"; // Bright Pink
         cellBgStyle = "rgba(236,72,153,0.3)";
         cellShadow = "0 0 25px rgba(236,72,153,0.6)";
         borderWidth = "6px";
     } 
-    // Step 5: No Road (Solid Bright Green)
+    // Step 5: Marked No Road (Solid Green)
     else if (step === 5) {
-        cellBorderStyle = "#22c55e";
-        cellBgStyle = "#22c55e"; // Solid for clarity in demo
+        cellBorderStyle = "#22c55e"; // Green
+        cellBgStyle = "#22c55e"; 
         cellShadow = "0 0 20px rgba(34,197,94,0.5)";
         cellText = "0";
         borderWidth = "2px";
     } 
-    // Step 6+: Road (Solid Bright Red)
+    // Step 6+: Marked Road (Solid Red)
     else if (step >= 6) {
-        cellBorderStyle = "#ef4444";
-        cellBgStyle = "#ef4444"; // Solid for clarity in demo
+        cellBorderStyle = "#ef4444"; // Red
+        cellBgStyle = "#ef4444";
         cellShadow = "0 0 20px rgba(239,68,68,0.5)";
         cellText = "1";
         borderWidth = "2px";
@@ -86,20 +86,19 @@ const InteractionDemo = () => {
 
     return (
         <div className="flex flex-col gap-3 mb-6">
-            {/* Simulated Map View Container */}
             <div className="w-full h-56 bg-slate-950 rounded-2xl relative overflow-hidden border border-slate-800 shadow-2xl group">
-                {/* Background Grid - Panning Animation */}
-                <div className={`absolute inset-0 opacity-10 transition-transform duration-1000 cubic-bezier(0.4, 0, 0.2, 1) ${isPanning ? 'translate-x-[-120px] translate-y-[40px] scale-125' : ''}`} 
+                {/* Background Simulation with Panning */}
+                <div className={`absolute inset-0 opacity-10 transition-transform duration-1000 cubic-bezier(0.4, 0, 0.2, 1) ${isPanning ? 'translate-x-[-80px] translate-y-[30px] scale-110' : ''}`} 
                     style={{ 
                         backgroundImage: 'linear-gradient(#4ADE80 1px, transparent 1px), linear-gradient(90deg, #4ADE80 1px, transparent 1px)', 
                         backgroundSize: '24px 24px' 
                     }}
                 ></div>
 
-                {/* Target Cell (ID: 88) */}
+                {/* Target Cell ID: 88 */}
                 <div 
                     className={`absolute w-24 h-24 transition-all duration-300 flex flex-col items-center justify-center gap-1 z-10 
-                        ${isPanning ? 'translate-x-[calc(50%-48px-120px)] translate-y-[calc(50%-48px+40px)] scale-125' : 'translate-x-[120px] translate-y-[40px]'} 
+                        ${isPanning ? 'translate-x-[calc(50%-48px)] translate-y-[calc(50%-48px)]' : 'translate-x-[60px] translate-y-[40px]'} 
                         ${isActive ? 'opacity-100' : 'opacity-20'}`}
                     style={{
                         top: '0',
@@ -115,10 +114,9 @@ const InteractionDemo = () => {
                             {cellText}
                         </span>
                     )}
-                    {step === 3 && <div className="absolute inset-0 border-4 border-white animate-ping"></div>}
                 </div>
 
-                {/* Mock Attribute Table (Left Bottom Floating Window) */}
+                {/* Mock Attribute Table */}
                 <div className={`absolute bottom-3 left-3 w-32 bg-slate-900/95 backdrop-blur-md border rounded-lg overflow-hidden transition-all duration-300 z-20 ${isCursorOnTable ? 'border-emerald-500 ring-4 ring-emerald-500/20 scale-105 shadow-xl' : 'border-slate-700'}`}>
                     <div className="bg-slate-800 px-2 py-1.5 text-[9px] font-black text-slate-300 flex items-center gap-1.5">
                         <Table2 className="w-3 h-3 text-emerald-500" /> 属性表
@@ -133,24 +131,24 @@ const InteractionDemo = () => {
                     </div>
                 </div>
 
-                {/* Status Toast */}
+                {/* Status Toasts with Specific Chinese Labels */}
                 {step === 5 && (
-                    <div className="absolute top-4 right-4 bg-green-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
-                        标注状态: 0 (无路)
+                    <div className="absolute top-4 right-4 bg-green-500 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
+                        标注无道路
                     </div>
                 )}
                 {step === 6 && (
-                    <div className="absolute top-4 right-4 bg-red-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
-                        标注状态: 1 (有路)
+                    <div className="absolute top-4 right-4 bg-red-500 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
+                        标注有道路
                     </div>
                 )}
 
-                {/* Cursor */}
+                {/* Cursor Implementation */}
                 <div 
                     className="absolute transition-all duration-500 ease-in-out z-40"
                     style={{
-                        top: isCursorOnTable ? '82%' : (isAtCell ? '50%' : '15%'),
-                        left: isCursorOnTable ? '18%' : (isAtCell ? '50%' : '15%'),
+                        top: isCursorOnTable ? '80%' : (isAtCell ? '50%' : '15%'),
+                        left: isCursorOnTable ? '20%' : (isAtCell ? '50%' : '15%'),
                         transform: `translate(-10%, -10%) scale(${isClickDown ? 0.75 : 1})`,
                         opacity: step === 0 ? 0 : 1
                     }}
@@ -285,7 +283,7 @@ function DemoContentWrapper() {
                         定位技巧：点击属性表行
                     </div>
                     <p className="text-[11px] text-emerald-700 leading-relaxed font-medium">
-                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑定位目标网格并将其高亮，助您精准定位任务目标。
+                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑定位目标网格并将其高亮（粉色），助您精准定位任务目标。
                     </p>
                 </div>
 
