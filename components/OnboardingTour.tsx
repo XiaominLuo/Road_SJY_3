@@ -1,6 +1,6 @@
 
 import React, { useState, useLayoutEffect, useEffect, useRef } from 'react';
-import { ShieldCheck, Layers, UploadCloud, Milestone, MousePointerClick, ChevronRight, Check, MousePointer2, Table2, Info } from 'lucide-react';
+import { ShieldCheck, Layers, UploadCloud, Milestone, MousePointerClick, ChevronRight, Check, MousePointer2, Table2, Info, XCircle } from 'lucide-react';
 
 interface OnboardingTourProps {
   onComplete: () => void;
@@ -17,7 +17,8 @@ const InteractionDemo = () => {
      * 4: Cursor moves to Cell center
      * 5: Click 1 (No Road - Green)
      * 6: Click 2 (Road - Red)
-     * 7: Reset
+     * 7: Click 3 (Cancel - Transparent/Default) -> Show "取消标注"
+     * 8: Reset
      */
     const [step, setStep] = useState(0);
     const GRID_SIZE = 64; // 对齐网格大小
@@ -30,6 +31,7 @@ const InteractionDemo = () => {
             { t: 800, s: 4 },  // 移动光标到网格中心
             { t: 800, s: 5 },  // 点击1: 绿色 (无路)
             { t: 1000, s: 6 }, // 点击2: 红色 (有路)
+            { t: 1000, s: 7 }, // 点击3: 取消标注 (恢复默认)
             { t: 2500, s: 0 }, // 重置循环
         ];
 
@@ -49,7 +51,7 @@ const InteractionDemo = () => {
     }, []);
 
     const isCursorOnTable = step === 1 || step === 2;
-    const isClickDown = step === 2 || step === 5 || step === 6;
+    const isClickDown = step === 2 || step === 5 || step === 6 || step === 7;
     const isPanning = step === 3;
     const isAtCell = step >= 4;
     const isActive = step >= 2; // 网格被激活（点击属性表后）
@@ -76,13 +78,21 @@ const InteractionDemo = () => {
         cellText = "0";
         borderWidth = "2px";
     } 
-    // Step 6+: Marked Road (Red)
-    else if (step >= 6) {
+    // Step 6: Marked Road (Red)
+    else if (step === 6) {
         cellBorderStyle = "#ef4444"; 
         cellBgStyle = "#ef4444";
         cellShadow = "0 0 20px rgba(239,68,68,0.4)";
         cellText = "1";
         borderWidth = "2px";
+    }
+    // Step 7: Cancel (Back to default highlight style or transparent)
+    else if (step === 7) {
+        cellBorderStyle = "#ec4899"; // 返回选中状态的粉色边框，但无填充
+        cellBgStyle = "rgba(255,255,255,0.03)";
+        cellShadow = "none";
+        cellText = "";
+        borderWidth = "4px";
     }
 
     return (
@@ -146,6 +156,12 @@ const InteractionDemo = () => {
                 {step === 6 && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg animate-in slide-in-from-top z-30 ring-2 ring-white/20">
                         标注有道路
+                    </div>
+                )}
+                {step === 7 && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg animate-in slide-in-from-top z-30 ring-2 ring-white/20 flex items-center gap-1.5">
+                        <XCircle className="w-3 h-3" />
+                        取消标注
                     </div>
                 )}
 
