@@ -485,14 +485,14 @@ export default function App() {
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 mb-1">
                     <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded-sm bg-red-500"></div>Road</div>
-                    <span>{taskProgress.markedRoad}</span>
+                    <span className="tabular-nums">{taskProgress.markedRoad} / {taskProgress.total}</span>
                   </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-red-500 transition-all" style={{ width: `${(taskProgress.markedRoad/taskProgress.total)*100}%` }}></div></div>
                 </div> 
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 mb-1">
                     <div className="flex items-center gap-1.5"><div className="w-4 h-4 border border-yellow-400 bg-transparent rounded-[1px]"></div>Build</div>
-                    <span>{taskProgress.markedBuilding}</span>
+                    <span className="tabular-nums">{taskProgress.markedBuilding} / {taskProgress.total}</span>
                   </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-yellow-500 transition-all" style={{ width: `${(taskProgress.markedBuilding/taskProgress.total)*100}%` }}></div></div>
                 </div> 
