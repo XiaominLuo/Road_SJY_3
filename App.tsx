@@ -171,6 +171,8 @@ export default function App() {
   const [gridStates, setGridStates] = useState<Record<string, number>>({});
   const [buildingStates, setBuildingStates] = useState<Record<string, number>>({});
   const [labelMode, setLabelMode] = useState<LabelMode>('road');
+  const [isDefaultGridVisible, setIsDefaultGridVisible] = useState(true);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const geoJsonRef = useRef<L.GeoJSON>(null);
   const [isTableOpen, setIsTableOpen] = useState(true);
@@ -180,6 +182,7 @@ export default function App() {
   useEffect(() => { stateRef.current = { gridStates, buildingStates, labelMode, customLayers }; }, [gridStates, buildingStates, labelMode, customLayers]);
 
   const defaultGridFeatures = useMemo(() => generateGrid(34.5, 96.0), []);
+  
   const activeGridFeatures = useMemo(() => {
       const userGridFeatures = customLayers
         .filter(layer => layer.type === 'grid' && layer.visible !== false)
@@ -189,8 +192,13 @@ export default function App() {
             if (Array.isArray(raw)) return raw;
             return [raw];
         });
-      return [...defaultGridFeatures, ...userGridFeatures];
-  }, [defaultGridFeatures, customLayers]);
+      
+      const features = [];
+      if (isDefaultGridVisible) features.push(...defaultGridFeatures);
+      features.push(...userGridFeatures);
+      
+      return features;
+  }, [defaultGridFeatures, customLayers, isDefaultGridVisible]);
 
   const referenceLayers = useMemo(() => customLayers.filter(layer => layer.type === 'reference' && layer.visible !== false), [customLayers]);
   const activeLayer = useMemo(() => customLayers.find(l => l.id === activeLayerId), [customLayers, activeLayerId]);
@@ -423,6 +431,11 @@ export default function App() {
       setGridDataVersion(v => v + 1); setLayerToDeleteId(null);
   };
 
+  const toggleLayerVisibility = (id: string) => {
+      setCustomLayers(prev => prev.map(l => l.id === id ? { ...l, visible: l.visible === false ? true : false } : l));
+      setGridDataVersion(v => v + 1);
+  };
+
   const handleLoginSuccess = (userData: User) => { setUser(userData); localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(userData)); setShowAuthModal(false); handleAutoSync(userData); setShowTour(true); };
   useEffect(() => { const checkSession = async () => { const currentUser = await api.checkLoginStatus(); if (currentUser) { setUser(currentUser); handleAutoSync(currentUser); setShowTour(true); } }; checkSession(); }, [handleAutoSync]);
   useEffect(() => { if (geoJsonRef.current) { geoJsonRef.current.eachLayer((layer: any) => { const id = layer.feature.id; if (id !== selectedFeatureId) layer.setStyle(getFeatureStyle(gridStates[id] || 0, buildingStates[id] || 0)); }); } }, [gridStates, buildingStates, selectedFeatureId]);
@@ -433,12 +446,45 @@ export default function App() {
       else { if (nb === 0) nb = 2; else if (nb === 2) nb = 1; else nb = 0; setBuildingStates(p => ({ ...p, [id]: nb })); }
       if (id !== selectedFeatureId) e.target.setStyle(getFeatureStyle(nr, nb));
   };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) { alert("请登录"); return; }
-    const file = event.target.files?.[0]; if (!file) return;
-    const reader = new FileReader(); reader.onload = async (e) => { if (e.target?.result) await processFileData(file.name, e.target.result, user); };
-    reader.readAsArrayBuffer(file); event.target.value = '';
+    if (!user) {
+      alert("请先登录系统后再上传数据。");
+      return;
+    }
+
+    const input = event.target;
+    const files = input.files;
+    
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const fileName = file.name;
+
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      const result = e.target?.result;
+      if (!result) return;
+      
+      try {
+        await processFileData(fileName, result, user);
+      } catch (err: any) {
+        console.error("[Upload] 处理文件失败:", err);
+        alert(`文件解析失败: ${err.message || '格式不正确'}`);
+      } finally {
+        if (input) input.value = '';
+      }
+    };
+
+    reader.onerror = () => {
+      alert("文件读取过程中发生错误，请检查文件权限或重试。");
+      if (input) input.value = '';
+    };
+
+    reader.readAsArrayBuffer(file);
   };
+
   if (!user) return ( <> <LandingPage onStart={() => setShowAuthModal(true)} /> <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLoginSuccess={handleLoginSuccess} /> </> );
 
   return (
@@ -583,16 +629,45 @@ export default function App() {
           <div className="bg-white p-4 rounded-xl shadow-xl border w-64 space-y-4 max-h-[60vh] overflow-y-auto"> 
             <div className="space-y-2 text-xs"> 
               <div className="font-bold">上传数据</div> 
-              <input type="file" id="shp-upload" ref={fileInputRef} accept=".zip,.json,.geojson" onChange={handleFileUpload} className="hidden" /> 
-              <label htmlFor="shp-upload" className="block p-4 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-500 cursor-pointer text-center">上传 ZIP (WGS84对齐)</label> 
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                accept=".zip,.json,.geojson" 
+                onChange={handleFileUpload} 
+                className="opacity-0 absolute w-0 h-0 pointer-events-none" 
+              /> 
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="block p-4 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-500 cursor-pointer text-center hover:bg-emerald-50 transition-all"
+              >
+                上传 ZIP (WGS84对齐)
+              </div> 
             </div> 
             <div className="space-y-2 text-xs"> 
               <div className="font-bold text-slate-400 uppercase">云端资产</div> 
-              <div onClick={() => setActiveLayerId(null)} className={`p-2 rounded-lg border cursor-pointer ${activeLayerId === null ? 'bg-emerald-50 border-emerald-500 font-bold' : ''}`}>默认网格</div> 
+              <div onClick={() => setActiveLayerId(null)} className={`group flex justify-between items-center p-2 rounded-lg border cursor-pointer ${activeLayerId === null ? 'bg-emerald-50 border-emerald-500 font-bold' : ''}`}> 
+                <div className="flex items-center gap-2 flex-1 truncate">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsDefaultGridVisible(!isDefaultGridVisible); setGridDataVersion(v => v + 1); }}
+                    className={`shrink-0 p-1 rounded hover:bg-slate-100 transition-colors ${isDefaultGridVisible ? 'text-emerald-600' : 'text-slate-300'}`}
+                  >
+                    {isDefaultGridVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  </button>
+                  <span className="truncate">默认网格</span> 
+                </div>
+              </div> 
               {customLayers.filter(l => l.userId === user.id).map(layer => ( 
                 <div key={layer.id} onClick={() => setActiveLayerId(layer.id)} className={`flex justify-between items-center p-2 rounded-lg border cursor-pointer ${activeLayerId === layer.id ? 'bg-emerald-50 border-emerald-500 font-bold' : ''}`}> 
-                  <span className="truncate flex-1">{layer.name}</span> 
-                  <button onClick={(e) => { e.stopPropagation(); setLayerToDeleteId(layer.id); }} className="text-slate-300 hover:text-red-500 ml-2"><Trash2 className="w-3.5 h-3.5" /></button> 
+                  <div className="flex items-center gap-2 flex-1 truncate">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }}
+                      className={`shrink-0 p-1 rounded hover:bg-slate-100 transition-colors ${layer.visible !== false ? 'text-emerald-600' : 'text-slate-300'}`}
+                    >
+                      {layer.visible !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                    <span className="truncate">{layer.name}</span> 
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); setLayerToDeleteId(layer.id); }} className="text-slate-300 hover:text-red-500 ml-2 p-1 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button> 
                 </div> 
               ))} 
             </div> 
