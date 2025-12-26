@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'http://roadfinderresearch.com',
+          target: 'https://roadfinderresearch.com',
           changeOrigin: true,
           secure: true,
         },
