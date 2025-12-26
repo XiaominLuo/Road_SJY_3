@@ -491,7 +491,7 @@ export default function App() {
                 </div> 
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 mb-1">
-                    <div className="flex items-center gap-1.5"><div className="w-4 h-4 border border-yellow-400 bg-transparent rounded-[1px]"></div>Build</div>
+                    <div className="flex items-center gap-1.5"><div className="w-4 h-4 border border-yellow-400 bg-transparent rounded-[1px]"></div>Building</div>
                     <span className="tabular-nums">{taskProgress.markedBuilding} / {taskProgress.total}</span>
                   </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-yellow-500 transition-all" style={{ width: `${(taskProgress.markedBuilding/taskProgress.total)*100}%` }}></div></div>
@@ -512,7 +512,7 @@ export default function App() {
               <div className="flex-1 overflow-auto bg-white custom-scrollbar"> 
                 <table className="w-full text-[10px] text-left"> 
                   <thead className="bg-slate-50 sticky top-0 text-[8px] text-slate-400 font-black tracking-widest uppercase"> 
-                    <tr><th className="px-1.5 py-1.5 border-b">ID</th><th className="px-1 py-1.5 border-b text-center">ROAD</th><th className="px-1 py-1.5 border-b text-center">BUILD</th></tr> 
+                    <tr><th className="px-1.5 py-1.5 border-b">ID</th><th className="px-1 py-1.5 border-b text-center">ROAD</th><th className="px-1 py-1.5 border-b text-center">BUILDING</th></tr> 
                   </thead> 
                   <tbody> 
                     {attributeTableData.rows.map(row => { 
