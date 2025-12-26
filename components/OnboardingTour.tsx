@@ -82,8 +82,6 @@ const InteractionDemo = () => {
                         backgroundSize: '24px 24px' 
                     }}
                 ></div>
-                
-                <div className="absolute top-2 left-3 text-[9px] font-black text-[#4ADE80]/40 tracking-widest uppercase">视口监控区</div>
 
                 {/* Target Cell (ID: 88) */}
                 <div className={`relative w-24 h-24 border transition-all duration-300 flex flex-col items-center justify-center gap-1 z-10 ${cellStyle} ${isPanning ? 'translate-x-[-120px] translate-y-[40px] scale-125' : 'translate-x-[40px] translate-y-[-20px] opacity-20'}`}>
@@ -263,7 +261,7 @@ function DemoContentWrapper() {
                         定位技巧：点击属性表行
                     </div>
                     <p className="text-[11px] text-emerald-700 leading-relaxed font-medium">
-                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑飞向目标<b>网格</b>，并以<span className="text-pink-600 font-bold">粉色高亮</span>该目标，助您精准定位。
+                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑定位目标网格，并以<span className="text-pink-600 font-bold">粉色高亮</span>该目标，助您精准定位任务目标。
                     </p>
                 </div>
 
