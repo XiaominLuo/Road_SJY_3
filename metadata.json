@@ -1,0 +1,7 @@
+{
+  "name": "Copy of RoadFinder 寻路者",
+  "description": "A high-fidelity satellite imagery viewer powered by Esri World Imagery. Features real-time location analysis and AI-assisted geographical insights.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
