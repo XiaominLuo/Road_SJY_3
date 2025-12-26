@@ -10,26 +10,27 @@ interface OnboardingTourProps {
 const InteractionDemo = () => {
     /**
      * Sequence Steps:
-     * 0: Initial State (Invisible/Hidden)
+     * 0: Initial State
      * 1: Cursor moves to Table Row (Bottom Left)
-     * 2: Click Table Row -> SHOW PINK HIGHLIGHT + OPACITY 100
-     * 3: Map Fly Animation (Background pans) -> KEEP PINK HIGHLIGHT
-     * 4: Map Focused, Cursor moves to Grid Cell center
-     * 5: Click 1 (First Click on Cell) -> State: No Road (Green) + Toast: "标注无道路"
-     * 6: Click 2 (Second Click on Cell) -> State: Road (Red) + Toast: "标注有道路"
-     * 7: Reset Loop after a delay
+     * 2: Click Table Row -> SHOW PINK HIGHLIGHT AT CENTER
+     * 3: Map Fly Animation (Background shifts slightly) -> CELL STAYS CENTERED
+     * 4: Cursor moves to Cell center
+     * 5: Click 1 (No Road - Green)
+     * 6: Click 2 (Road - Red)
+     * 7: Reset
      */
     const [step, setStep] = useState(0);
+    const GRID_SIZE = 64; // 对齐网格大小
 
     useEffect(() => {
         const sequence = [
-            { t: 800, s: 1 },  // Cursor moves to table row
-            { t: 600, s: 2 },  // Click table row (Pink highlight appears)
-            { t: 400, s: 3 },  // Start panning animation
-            { t: 1000, s: 4 }, // Panning finished, move cursor to cell center
-            { t: 800, s: 5 },  // Click 1: turns Green ("标注无道路")
-            { t: 1000, s: 6 }, // Click 2: turns Red ("标注有道路")
-            { t: 2500, s: 0 }, // Long pause then Reset
+            { t: 800, s: 1 },  // 移动到属性表
+            { t: 600, s: 2 },  // 点击属性表 (中心粉色高亮出现)
+            { t: 400, s: 3 },  // 背景平移模拟定位
+            { t: 800, s: 4 },  // 移动光标到网格中心
+            { t: 800, s: 5 },  // 点击1: 绿色 (无路)
+            { t: 1000, s: 6 }, // 点击2: 红色 (有路)
+            { t: 2500, s: 0 }, // 重置循环
         ];
 
         let timeoutId: any;
@@ -49,112 +50,117 @@ const InteractionDemo = () => {
 
     const isCursorOnTable = step === 1 || step === 2;
     const isClickDown = step === 2 || step === 5 || step === 6;
-    const isPanning = step >= 3;
+    const isPanning = step === 3;
     const isAtCell = step >= 4;
-    const isActive = step >= 2; // When cell is "active" (clicked in table)
+    const isActive = step >= 2; // 网格被激活（点击属性表后）
 
     // Cell Styling Variables
-    let cellBorderStyle = "rgba(255,255,255,0.2)";
-    let cellBgStyle = "rgba(255,255,255,0.05)";
+    let cellBorderStyle = "rgba(255,255,255,0.15)";
+    let cellBgStyle = "rgba(255,255,255,0.03)";
     let cellShadow = "none";
     let cellText = "";
     let borderWidth = "1px";
 
-    // Step 2-4: Selected Highlight (Pink)
+    // Step 2-4: Pink Highlight
     if (step >= 2 && step <= 4) {
-        cellBorderStyle = "#ec4899"; // Bright Pink
+        cellBorderStyle = "#ec4899"; 
         cellBgStyle = "rgba(236,72,153,0.3)";
-        cellShadow = "0 0 25px rgba(236,72,153,0.6)";
-        borderWidth = "6px";
+        cellShadow = "0 0 30px rgba(236,72,153,0.5)";
+        borderWidth = "4px";
     } 
-    // Step 5: Marked No Road (Solid Green)
+    // Step 5: Marked No Road (Green)
     else if (step === 5) {
-        cellBorderStyle = "#22c55e"; // Green
+        cellBorderStyle = "#22c55e"; 
         cellBgStyle = "#22c55e"; 
-        cellShadow = "0 0 20px rgba(34,197,94,0.5)";
+        cellShadow = "0 0 20px rgba(34,197,94,0.4)";
         cellText = "0";
         borderWidth = "2px";
     } 
-    // Step 6+: Marked Road (Solid Red)
+    // Step 6+: Marked Road (Red)
     else if (step >= 6) {
-        cellBorderStyle = "#ef4444"; // Red
+        cellBorderStyle = "#ef4444"; 
         cellBgStyle = "#ef4444";
-        cellShadow = "0 0 20px rgba(239,68,68,0.5)";
+        cellShadow = "0 0 20px rgba(239,68,68,0.4)";
         cellText = "1";
         borderWidth = "2px";
     }
 
     return (
         <div className="flex flex-col gap-3 mb-6">
-            <div className="w-full h-56 bg-slate-950 rounded-2xl relative overflow-hidden border border-slate-800 shadow-2xl group">
-                {/* Background Simulation with Panning */}
-                <div className={`absolute inset-0 opacity-10 transition-transform duration-1000 cubic-bezier(0.4, 0, 0.2, 1) ${isPanning ? 'translate-x-[-80px] translate-y-[30px] scale-110' : ''}`} 
+            <div className="w-full h-56 bg-slate-950 rounded-2xl relative overflow-hidden border border-slate-800 shadow-2xl">
+                {/* Background Grid - Integrated with the target cell */}
+                <div 
+                    className={`absolute inset-0 opacity-10 transition-all duration-1000 ease-in-out`} 
                     style={{ 
-                        backgroundImage: 'linear-gradient(#4ADE80 1px, transparent 1px), linear-gradient(90deg, #4ADE80 1px, transparent 1px)', 
-                        backgroundSize: '24px 24px' 
+                        backgroundImage: `linear-gradient(#4ADE80 1px, transparent 1px), linear-gradient(90deg, #4ADE80 1px, transparent 1px)`, 
+                        backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+                        backgroundPosition: 'center',
+                        transform: isPanning ? 'scale(1.1) rotate(1deg) translate(20px, -10px)' : 'scale(1) rotate(0deg) translate(0, 0)'
                     }}
                 ></div>
 
-                {/* Target Cell ID: 88 */}
+                {/* Target Cell ID: 88 - Centered and matching background grid */}
                 <div 
-                    className={`absolute w-24 h-24 transition-all duration-300 flex flex-col items-center justify-center gap-1 z-10 
-                        ${isPanning ? 'translate-x-[calc(50%-48px)] translate-y-[calc(50%-48px)]' : 'translate-x-[60px] translate-y-[40px]'} 
+                    className={`absolute transition-all duration-300 flex flex-col items-center justify-center gap-1 z-10 
                         ${isActive ? 'opacity-100' : 'opacity-20'}`}
                     style={{
-                        top: '0',
-                        left: '0',
+                        width: `${GRID_SIZE}px`,
+                        height: `${GRID_SIZE}px`,
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
                         border: `${borderWidth} solid ${cellBorderStyle}`,
                         backgroundColor: cellBgStyle,
                         boxShadow: cellShadow
                     }}
                 >
-                    <span className="text-[10px] text-white font-black bg-black/70 px-1.5 py-0.5 rounded leading-none shadow-sm">ID: 88</span>
+                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] text-white font-black bg-black/80 px-1.5 py-0.5 rounded-full border border-white/10 whitespace-nowrap">ID: 88</span>
                     {cellText && (
-                        <span className="text-4xl font-mono font-black animate-in zoom-in duration-300 text-white drop-shadow-lg">
+                        <span className="text-2xl font-mono font-black animate-in zoom-in duration-300 text-white drop-shadow-md">
                             {cellText}
                         </span>
                     )}
                 </div>
 
                 {/* Mock Attribute Table */}
-                <div className={`absolute bottom-3 left-3 w-32 bg-slate-900/95 backdrop-blur-md border rounded-lg overflow-hidden transition-all duration-300 z-20 ${isCursorOnTable ? 'border-emerald-500 ring-4 ring-emerald-500/20 scale-105 shadow-xl' : 'border-slate-700'}`}>
-                    <div className="bg-slate-800 px-2 py-1.5 text-[9px] font-black text-slate-300 flex items-center gap-1.5">
+                <div className={`absolute bottom-3 left-3 w-32 bg-slate-900/90 backdrop-blur-md border rounded-xl overflow-hidden transition-all duration-300 z-20 ${isCursorOnTable ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'border-slate-700'}`}>
+                    <div className="bg-slate-800 px-2.5 py-1.5 text-[9px] font-black text-slate-300 flex items-center gap-1.5">
                         <Table2 className="w-3 h-3 text-emerald-500" /> 属性表
                     </div>
-                    <div className="p-1.5 space-y-1.5">
+                    <div className="p-1.5 space-y-1">
                         {[87, 88, 89].map((id) => (
-                            <div key={id} className={`px-2 py-1 rounded text-[10px] font-mono flex items-center justify-between transition-colors ${id === 88 && isCursorOnTable ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/30' : 'text-slate-500'}`}>
+                            <div key={id} className={`px-2 py-1 rounded-md text-[10px] font-mono flex items-center justify-between transition-colors ${id === 88 && isCursorOnTable ? 'bg-emerald-500 text-white font-bold' : 'text-slate-500'}`}>
                                 <span>#{id}</span>
-                                {id === 88 && isCursorOnTable && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.7)]" />}
+                                {id === 88 && isCursorOnTable && <Check className="w-3 h-3" />}
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Status Toasts with Specific Chinese Labels */}
+                {/* Status Toasts */}
                 {step === 5 && (
-                    <div className="absolute top-4 right-4 bg-green-500 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg animate-in slide-in-from-top z-30 ring-2 ring-white/20">
                         标注无道路
                     </div>
                 )}
                 {step === 6 && (
-                    <div className="absolute top-4 right-4 bg-red-500 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-xl animate-in slide-in-from-right ring-4 ring-white/30 z-30">
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg animate-in slide-in-from-top z-30 ring-2 ring-white/20">
                         标注有道路
                     </div>
                 )}
 
-                {/* Cursor Implementation */}
+                {/* Cursor */}
                 <div 
                     className="absolute transition-all duration-500 ease-in-out z-40"
                     style={{
-                        top: isCursorOnTable ? '80%' : (isAtCell ? '50%' : '15%'),
-                        left: isCursorOnTable ? '20%' : (isAtCell ? '50%' : '15%'),
-                        transform: `translate(-10%, -10%) scale(${isClickDown ? 0.75 : 1})`,
+                        top: isCursorOnTable ? '80%' : (isAtCell ? '50%' : '20%'),
+                        left: isCursorOnTable ? '20%' : (isAtCell ? '50%' : '80%'),
+                        transform: `translate(-10%, -10%) scale(${isClickDown ? 0.8 : 1})`,
                         opacity: step === 0 ? 0 : 1
                     }}
                 >
                     <MousePointer2 className="w-10 h-10 text-white drop-shadow-2xl fill-black" strokeWidth={1.5} />
-                    {isClickDown && <div className="absolute -top-4 -left-4 w-16 h-16 bg-white/60 rounded-full animate-ping"></div>}
+                    {isClickDown && <div className="absolute -top-4 -left-4 w-16 h-16 bg-white/40 rounded-full animate-ping"></div>}
                 </div>
             </div>
         </div>
