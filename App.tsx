@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, LayersControl, ScaleControl, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import COS from 'cos-js-sdk-v5';
+import JSZip from 'jszip';
 import { MapLocation, User, CustomLayer } from './types';
 import { MapController } from './components/MapController';
 import { LandingPage } from './components/LandingPage';
@@ -304,8 +305,7 @@ export default function App() {
                     layer.cloudFileName = targetFile.filename;
                 }
 
-                const JSZipObj = (window as any).JSZip;
-                const zip = new JSZipObj();
+                const zip = new JSZip();
 
                 if (layer.originalFiles) {
                     for (const [name, data] of Object.entries(layer.originalFiles)) {
@@ -408,8 +408,7 @@ export default function App() {
         let originalFiles: Record<string, Uint8Array> = {};
         if (fileExt === 'zip') {
             try {
-                const JSZipObj = (window as any).JSZip;
-                const zip = await JSZipObj.loadAsync(buffer as ArrayBuffer);
+                const zip = await JSZip.loadAsync(buffer as ArrayBuffer);
                 const filePromises: Promise<void>[] = [];
                 zip.forEach((relativePath: string, file: any) => {
                     filePromises.push(file.async("uint8array").then((data: Uint8Array) => {
