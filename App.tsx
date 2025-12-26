@@ -433,12 +433,48 @@ export default function App() {
       else { if (nb === 0) nb = 2; else if (nb === 2) nb = 1; else nb = 0; setBuildingStates(p => ({ ...p, [id]: nb })); }
       if (id !== selectedFeatureId) e.target.setStyle(getFeatureStyle(nr, nb));
   };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) { alert("请登录"); return; }
-    const file = event.target.files?.[0]; if (!file) return;
-    const reader = new FileReader(); reader.onload = async (e) => { if (e.target?.result) await processFileData(file.name, e.target.result, user); };
-    reader.readAsArrayBuffer(file); event.target.value = '';
+    if (!user) {
+      alert("请先登录系统后再上传数据。");
+      return;
+    }
+
+    const input = event.target;
+    const files = input.files;
+    
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const fileName = file.name;
+
+    // 使用标准 FileReader 进行跨浏览器安全读取，避免特定的 Webkit API 依赖
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      const result = e.target?.result;
+      if (!result) return;
+      
+      try {
+        await processFileData(fileName, result, user);
+      } catch (err: any) {
+        console.error("[Upload] 处理文件失败:", err);
+        alert(`文件解析失败: ${err.message || '格式不正确'}`);
+      } finally {
+        // 处理完成后重置 input 值，允许重复上传同一文件，修复部分浏览器缓存导致无法连续上传的问题
+        if (input) input.value = '';
+      }
+    };
+
+    reader.onerror = () => {
+      alert("文件读取过程中发生错误，请检查文件权限或重试。");
+      if (input) input.value = '';
+    };
+
+    // 采用通用 ArrayBuffer 模式，确保在 Firefox/Safari/Chrome 中都能稳定解析二进制数据
+    reader.readAsArrayBuffer(file);
   };
+
   if (!user) return ( <> <LandingPage onStart={() => setShowAuthModal(true)} /> <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLoginSuccess={handleLoginSuccess} /> </> );
 
   return (
@@ -583,7 +619,16 @@ export default function App() {
           <div className="bg-white p-4 rounded-xl shadow-xl border w-64 space-y-4 max-h-[60vh] overflow-y-auto"> 
             <div className="space-y-2 text-xs"> 
               <div className="font-bold">上传数据</div> 
-              <input type="file" id="shp-upload" ref={fileInputRef} accept=".zip,.json,.geojson" onChange={handleFileUpload} className="hidden" /> 
+              {/* 增强跨浏览器兼容性：使用 sr-only 实现视觉隐藏，并完善 accept 的 MIME 类型支持 */}
+              <input 
+                type="file" 
+                id="shp-upload" 
+                ref={fileInputRef} 
+                accept=".zip,application/zip,application/x-zip-compressed,.json,application/json,.geojson" 
+                onChange={handleFileUpload} 
+                className="sr-only" 
+                style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: '0' }}
+              /> 
               <label htmlFor="shp-upload" className="block p-4 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-500 cursor-pointer text-center">上传 ZIP (WGS84对齐)</label> 
             </div> 
             <div className="space-y-2 text-xs"> 
