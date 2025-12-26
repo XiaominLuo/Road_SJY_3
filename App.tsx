@@ -465,10 +465,10 @@ export default function App() {
       {/* Top Stats Strip */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none flex flex-col items-center gap-2"> 
         <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg border border-slate-200 flex items-center gap-4 text-xs font-bold text-slate-700"> 
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div><span>有路: {stats.roadCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div><span>无路: {stats.noRoadCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 border-2 border-yellow-400 bg-transparent rounded-[2px]"></div><span>有建筑: {stats.buildingCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 border-2 border-blue-500 bg-transparent rounded-[2px]"></div><span>无建筑: {stats.noBuildingCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 rounded-sm bg-red-500"></div><span>有路: {stats.roadCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 rounded-sm bg-green-500"></div><span>无路: {stats.noRoadCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 border-2 border-yellow-400 bg-transparent rounded-[2px]"></div><span>有建筑: {stats.buildingCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-2.5 border-2 border-blue-500 bg-transparent rounded-[2px]"></div><span>无建筑: {stats.noBuildingCount}</span></div> 
         </div> 
       </div>
 
@@ -510,7 +510,7 @@ export default function App() {
               <div className="flex-1 overflow-auto bg-white custom-scrollbar"> 
                 <table className="w-full text-[10px] text-left"> 
                   <thead className="bg-slate-50 sticky top-0 text-[8px] text-slate-400 font-black tracking-widest uppercase"> 
-                    <tr><th className="px-1.5 py-1.5 border-b">{attributeTableData.displayKey}</th><th className="px-1 py-1.5 border-b text-center">Road</th><th className="px-1 py-1.5 border-b text-center">Building</th></tr> 
+                    <tr><th className="px-1.5 py-1.5 border-b">ID</th><th className="px-1 py-1.5 border-b text-center">ROAD</th><th className="px-1 py-1.5 border-b text-center">BUILD</th></tr> 
                   </thead> 
                   <tbody> 
                     {attributeTableData.rows.map(row => { 
@@ -518,22 +518,22 @@ export default function App() {
                         const bs = buildingStates[row.id] || 0; 
                         return ( 
                           <tr key={row.id} className={`cursor-pointer border-b hover:bg-slate-50 ${selectedFeatureId === row.id ? 'bg-pink-50 ring-1 ring-pink-200' : ''}`} onClick={() => { setSelectedFeatureId(row.id); const coords = (row.geometry as any).coordinates[0]; if (coords) { const al = coords.map((c: any) => c[1]).reduce((a: any, b: any) => a + b, 0) / coords.length; const an = coords.map((c: any) => c[0]).reduce((a: any, b: any) => a + b, 0) / coords.length; setTargetLocation({ lat: al, lng: an, zoom: 17 }); } }}> 
-                            <td className="px-1.5 py-1.5 font-mono truncate max-w-[40px]">{row.displayId}</td> 
+                            <td className="px-1.5 py-1.5 font-mono truncate max-w-[32px]">{row.displayId}</td> 
                             <td className="px-1 py-1.5">
-                                <div className="flex items-center justify-center">
+                                <div className="flex items-center justify-center gap-1">
                                     {rs === 1 ? (
-                                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                        <><div className="w-4 h-2 rounded-sm bg-red-500 shrink-0"></div><span className="text-[9px]">1</span></>
                                     ) : rs === 2 ? (
-                                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                        <><div className="w-4 h-2 rounded-sm bg-green-500 shrink-0"></div><span className="text-[9px]">0</span></>
                                     ) : <span className="text-slate-200">-</span>}
                                 </div>
                             </td> 
                             <td className="px-1 py-1.5">
-                                <div className="flex items-center justify-center">
+                                <div className="flex items-center justify-center gap-1">
                                     {bs === 1 ? (
-                                        <div className="w-2 h-2 border-[1.5px] border-yellow-400 rounded-[1px]"></div>
+                                        <><div className="w-4 h-2 border-[1.5px] border-yellow-400 rounded-sm shrink-0"></div><span className="text-[9px]">1</span></>
                                     ) : bs === 2 ? (
-                                        <div className="w-2 h-2 border-[1.5px] border-blue-500 rounded-[1px]"></div>
+                                        <><div className="w-4 h-2 border-[1.5px] border-blue-500 rounded-sm shrink-0"></div><span className="text-[9px]">0</span></>
                                     ) : <span className="text-slate-200">-</span>}
                                 </div>
                             </td> 
@@ -605,13 +605,13 @@ export default function App() {
             onClick={() => setLabelMode('road')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'road' ? 'bg-red-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-2.5 h-2.5 rounded-full ${labelMode === 'road' ? 'bg-white' : 'bg-red-500'}`}></div> 标路
+            <div className={`w-4 h-2.5 rounded-sm ${labelMode === 'road' ? 'bg-white' : 'bg-red-500'}`}></div> 标路
           </button> 
           <button 
             onClick={() => setLabelMode('building')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'building' ? 'bg-yellow-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-2.5 h-2.5 border-2 rounded-[2px] ${labelMode === 'building' ? 'border-white' : 'border-yellow-400 bg-transparent'}`}></div> 标建筑
+            <div className={`w-4 h-2.5 border-2 rounded-[2px] ${labelMode === 'building' ? 'border-white' : 'border-yellow-400 bg-transparent'}`}></div> 标建筑
           </button> 
         </div> 
       </div>
