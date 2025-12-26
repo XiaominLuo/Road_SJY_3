@@ -2,7 +2,7 @@
 import { User } from '../types';
 
 // 使用相对路径，Vite 和 Vercel 会处理代理转发
-const API_BASE_URL = '';
+const API_BASE_URL = 'https://roadfinderresearch.com';
 
 /**
  * 核心响应处理器：确保流只被读取一次，并兼容 HTML 错误页
