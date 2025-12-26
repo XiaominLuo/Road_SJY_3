@@ -12,11 +12,11 @@ const InteractionDemo = () => {
      * Sequence Steps:
      * 0: Initial State
      * 1: Cursor moves to Table (Bottom Left)
-     * 2: Click Table Row (Flash)
-     * 3: Map Fly Animation (Background pans/scales)
-     * 4: Map Focused, Cursor moves to Grid Cell in center
-     * 5: Click 1 (Single Click) -> State: No Road (Mint Green/0)
-     * 6: Click 2 (Second Click) -> State: Road (Deep Red/1)
+     * 2: Click Table Row (Flash) -> SHOW PINK HIGHLIGHT
+     * 3: Map Fly Animation (Background pans/scales) -> KEEP PINK HIGHLIGHT
+     * 4: Map Focused, Cursor moves to Grid Cell in center -> KEEP PINK HIGHLIGHT
+     * 5: Click 1 (Single Click) -> State: No Road (Green/0)
+     * 6: Click 2 (Second Click) -> State: Road (Red/1)
      * 7: Reset Loop after a delay
      */
     const [step, setStep] = useState(0);
@@ -24,11 +24,11 @@ const InteractionDemo = () => {
     useEffect(() => {
         const sequence = [
             { t: 800, s: 1 },  // Move to table
-            { t: 400, s: 2 },  // Click table
+            { t: 400, s: 2 },  // Click table (Pink highlight starts)
             { t: 200, s: 3 },  // Fly/Pan start
             { t: 1000, s: 4 }, // Arrived at Grid, move cursor to cell
-            { t: 800, s: 5 },  // Click 1 (No Road - Mint Green 0)
-            { t: 1000, s: 6 }, // Click 2 (Road - Deep 1)
+            { t: 800, s: 5 },  // Click 1 (No Road - Green 0)
+            { t: 1000, s: 6 }, // Click 2 (Road - Red 1)
             { t: 2000, s: 0 }, // Reset
         ];
 
@@ -55,11 +55,19 @@ const InteractionDemo = () => {
     // Grid Cell State logic
     let cellStyle = "border-white/20 bg-white/5";
     let cellText = "";
-    if (step === 5) {
-        cellStyle = "bg-[#4ADE80]/40 border-[#4ADE80] shadow-[0_0_15px_rgba(74,222,128,0.3)]";
+
+    // Step 2, 3, 4: Selected Highlight (Pink)
+    if (step >= 2 && step <= 4) {
+        cellStyle = "border-[#ec4899] border-4 bg-[#ec4899]/30 shadow-[0_0_20px_rgba(236,72,153,0.4)]";
+    } 
+    // Step 5: No Road (Green)
+    else if (step === 5) {
+        cellStyle = "bg-[#22c55e]/50 border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)]";
         cellText = "0";
-    } else if (step >= 6) {
-        cellStyle = "bg-red-500/50 border-red-500 ring-2 ring-red-500/20";
+    } 
+    // Step 6+: Road (Red)
+    else if (step >= 6) {
+        cellStyle = "bg-[#ef4444]/50 border-[#ef4444] shadow-[0_0_15px_rgba(239,68,68,0.3)]";
         cellText = "1";
     }
 
@@ -81,7 +89,7 @@ const InteractionDemo = () => {
                 <div className={`relative w-24 h-24 border transition-all duration-300 flex flex-col items-center justify-center gap-1 z-10 ${cellStyle} ${isPanning ? 'translate-x-[-120px] translate-y-[40px] scale-125' : 'translate-x-[40px] translate-y-[-20px] opacity-20'}`}>
                     <span className="text-[9px] text-white font-black bg-black/60 px-1 py-0.5 rounded leading-none">ID: 88</span>
                     {cellText && (
-                        <span className={`text-2xl font-mono font-black animate-in zoom-in duration-300 ${step === 5 ? 'text-[#4ADE80]' : 'text-white'}`}>
+                        <span className="text-2xl font-mono font-black animate-in zoom-in duration-300 text-white">
                             {cellText}
                         </span>
                     )}
@@ -89,15 +97,15 @@ const InteractionDemo = () => {
                 </div>
 
                 {/* Mock Attribute Table (Left Bottom Floating Window) */}
-                <div className={`absolute bottom-3 left-3 w-32 bg-slate-900/90 backdrop-blur-md border rounded-lg overflow-hidden transition-all duration-300 z-20 ${isCursorOnTable ? 'border-[#4ADE80] ring-4 ring-[#4ADE80]/10 scale-105' : 'border-slate-700'}`}>
+                <div className={`absolute bottom-3 left-3 w-32 bg-slate-900/90 backdrop-blur-md border rounded-lg overflow-hidden transition-all duration-300 z-20 ${isCursorOnTable ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-105' : 'border-slate-700'}`}>
                     <div className="bg-slate-800 px-2 py-1 text-[8px] font-bold text-slate-400 flex items-center gap-1">
                         <Table2 className="w-2.5 h-2.5" /> 属性表
                     </div>
                     <div className="p-1 space-y-1">
                         {[87, 88, 89].map((id) => (
-                            <div key={id} className={`px-1.5 py-1 rounded text-[9px] font-mono flex items-center justify-between ${id === 88 && isCursorOnTable ? 'bg-[#4ADE80]/20 text-[#4ADE80]' : 'text-slate-500'}`}>
+                            <div key={id} className={`px-1.5 py-1 rounded text-[9px] font-mono flex items-center justify-between transition-colors ${id === 88 && isCursorOnTable ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500'}`}>
                                 <span>#{id}</span>
-                                {id === 88 && isCursorOnTable && <div className="w-1.5 h-1.5 rounded-full bg-[#4ADE80] animate-pulse" />}
+                                {id === 88 && isCursorOnTable && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
                             </div>
                         ))}
                     </div>
@@ -105,7 +113,7 @@ const InteractionDemo = () => {
 
                 {/* Status Toast */}
                 {step === 5 && (
-                    <div className="absolute top-4 right-4 bg-[#4ADE80] text-black text-[10px] font-black px-3 py-1 rounded shadow-xl animate-in slide-in-from-right">
+                    <div className="absolute top-4 right-4 bg-green-500 text-white text-[10px] font-black px-3 py-1 rounded shadow-xl animate-in slide-in-from-right">
                         标注状态: 0 (无路)
                     </div>
                 )}
@@ -255,7 +263,7 @@ function DemoContentWrapper() {
                         定位技巧：点击属性表行
                     </div>
                     <p className="text-[11px] text-emerald-700 leading-relaxed font-medium">
-                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑飞向目标<b>网格</b>并将其高亮，助您精准定位任务目标。
+                        在左侧<b>属性表</b>中点击任何一行，地图会自动平滑飞向目标<b>网格</b>，并以<span className="text-pink-600 font-bold">粉色高亮</span>该目标，助您精准定位。
                     </p>
                 </div>
 
