@@ -8,7 +8,7 @@ import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { api } from './services/apiService';
-import { Layers, LogOut, Save, CheckCircle2, Building2, MousePointer2, FileUp, Globe, AlertTriangle, Trash2, Map as MapIcon, Eye, EyeOff, FileText, Table2, Minimize2, Loader2, CloudSync, ChevronDown, ChevronUp, Mail } from 'lucide-react';
+import { Layers, LogOut, Save, CheckCircle2, Building2, MousePointer2, FileUp, Globe, AlertTriangle, Trash2, Map as MapIcon, Eye, EyeOff, FileText, Table2, Minimize2, Loader2, CloudSync, ChevronDown, ChevronUp, Mail, Milestone } from 'lucide-react';
 
 // Fix for default Leaflet marker icons
 // @ts-ignore
@@ -221,7 +221,7 @@ export default function App() {
       let markedRoad = 0; let markedBuilding = 0;
       targetIds.forEach(id => {
           if (gridStates[id] === 1 || gridStates[id] === 2) markedRoad++;
-          if (buildingStates[id] === 1 || buildingStates[id] || 2) markedBuilding++;
+          if (buildingStates[id] === 1 || buildingStates[id] === 2) markedBuilding++;
       });
       return { fileName: isCustomGrid ? activeLayer.name.replace(' (可标注)', '') : '默认网格', total, markedRoad, markedBuilding };
   }, [activeLayer, gridStates, buildingStates, defaultGridFeatures]);
@@ -443,7 +443,7 @@ export default function App() {
 
   return (
     <div className="relative w-full h-full bg-slate-900 overflow-hidden text-slate-900 font-sans">
-      {isSyncing && ( <div className="fixed inset-0 z-[4000] bg-slate-900/60 backdrop-blur-md flex flex-col items-center justify-center text-white space-y-4"> <Loader2 className="w-12 h-12 animate-spin text-emerald-400" /> <div className="text-xl font-bold tracking-widest animate-pulse">正在同步云端资产...</div> </div> )}
+      {isSyncing && ( <div className="fixed inset-0 z-[4000] bg-slate-900/60 backdrop-blur-md flex flex-col items-center justify-center text-white space-y-4"> <Loader2 className="w-12 h-12 animate-spin text-emerald-400" /> <div className="text-xl font-bold tracking-widest animate-pulse">正在同步云端数据...</div> </div> )}
       {(isSaving || isDeleting) && ( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[3000] bg-emerald-600 text-white px-6 py-2 rounded-full shadow-2xl flex items-center gap-3 animate-pulse border border-emerald-400"> <Loader2 className="w-4 h-4 animate-spin" /> <span className="text-sm font-bold">{isDeleting ? '从云端删除中...' : '同步属性数据中...'}</span> </div> )}
       <MapContainer center={[DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng]} zoom={DEFAULT_LOCATION.zoom} className="w-full h-full z-0" zoomControl={false}>
         <MapController onMoveEnd={(loc) => setCurrentLocation(loc)} targetLocation={targetLocation} />
@@ -607,13 +607,13 @@ export default function App() {
             onClick={() => setLabelMode('road')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'road' ? 'bg-red-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-4 h-4 rounded-sm ${labelMode === 'road' ? 'bg-white' : 'bg-red-500'}`}></div> 标路
+            <Milestone className={`w-4 h-4 ${labelMode === 'road' ? 'text-white' : 'text-red-500'}`} /> 标路
           </button> 
           <button 
             onClick={() => setLabelMode('building')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'building' ? 'bg-yellow-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-4 h-4 border-2 rounded-[2px] ${labelMode === 'building' ? 'border-white' : 'border-yellow-400 bg-transparent'}`}></div> 标建筑
+            <Building2 className={`w-4 h-4 ${labelMode === 'building' ? 'text-white' : 'text-yellow-500'}`} /> 标建筑
           </button> 
         </div> 
       </div>
