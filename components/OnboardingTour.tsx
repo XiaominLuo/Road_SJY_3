@@ -296,10 +296,10 @@ function DemoContentWrapper() {
                             <div className="text-[11px] font-black text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100 inline-block">道路标注模式</div>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-6 h-2 rounded-sm bg-green-500 shadow-sm"></div> 1次: 无路 (0)
+                                    <div className="w-4 h-4 rounded-sm bg-green-500 shadow-sm"></div> 1次: 无路 (0)
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-6 h-2 rounded-sm bg-red-500 shadow-sm"></div> 2次: 有路 (1)
+                                    <div className="w-4 h-4 rounded-sm bg-red-500 shadow-sm"></div> 2次: 有路 (1)
                                 </div>
                             </div>
                         </div>
@@ -309,10 +309,10 @@ function DemoContentWrapper() {
                             <div className="text-[11px] font-black text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-100 inline-block">建筑标注模式</div>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-6 h-2 border-2 border-blue-500 bg-transparent rounded-[2px] shadow-sm"></div> 1次: 无建筑 (0)
+                                    <div className="w-4 h-4 border-2 border-blue-500 bg-transparent rounded-[2px] shadow-sm"></div> 1次: 无建筑 (0)
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold">
-                                    <div className="w-6 h-2 border-2 border-yellow-400 bg-transparent rounded-[2px] shadow-sm"></div> 2次: 有建筑 (1)
+                                    <div className="w-4 h-4 border-2 border-yellow-400 bg-transparent rounded-[2px] shadow-sm"></div> 2次: 有建筑 (1)
                                 </div>
                             </div>
                         </div>

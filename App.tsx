@@ -221,7 +221,7 @@ export default function App() {
       let markedRoad = 0; let markedBuilding = 0;
       targetIds.forEach(id => {
           if (gridStates[id] === 1 || gridStates[id] === 2) markedRoad++;
-          if (buildingStates[id] === 1 || buildingStates[id] === 2) markedBuilding++;
+          if (buildingStates[id] === 1 || buildingStates[id] || 2) markedBuilding++;
       });
       return { fileName: isCustomGrid ? activeLayer.name.replace(' (可标注)', '') : '默认网格', total, markedRoad, markedBuilding };
   }, [activeLayer, gridStates, buildingStates, defaultGridFeatures]);
@@ -461,10 +461,10 @@ export default function App() {
       {/* Top Stats Strip */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none flex flex-col items-center gap-2"> 
         <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg border border-slate-200 flex items-center gap-4 text-xs font-bold text-slate-700"> 
-          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 rounded-sm bg-red-500"></div><span>有路: {stats.roadCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 rounded-sm bg-green-500"></div><span>无路: {stats.noRoadCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 border-2 border-yellow-400 bg-transparent rounded-[2px]"></div><span>有建筑: {stats.buildingCount}</span></div> 
-          <div className="flex items-center gap-1.5"><div className="w-6 h-2.5 border-2 border-blue-500 bg-transparent rounded-[2px]"></div><span>无建筑: {stats.noBuildingCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded-sm bg-red-500"></div><span>有路: {stats.roadCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded-sm bg-green-500"></div><span>无路: {stats.noRoadCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 border-2 border-yellow-400 bg-transparent rounded-[2px]"></div><span>有建筑: {stats.buildingCount}</span></div> 
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 border-2 border-blue-500 bg-transparent rounded-[2px]"></div><span>无建筑: {stats.noBuildingCount}</span></div> 
         </div> 
       </div>
 
@@ -475,7 +475,7 @@ export default function App() {
         </button> 
 
         {taskProgress && ( 
-          <div className="bg-white/95 w-32 rounded-2xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden"> 
+          <div className="bg-white/95 w-48 rounded-2xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden"> 
             <div className="px-3 py-2.5 flex items-center justify-between border-b cursor-pointer" onClick={() => setIsTaskProgressExpanded(!isTaskProgressExpanded)}> 
               <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /><span className="text-[10px] font-bold text-slate-700 truncate">进度</span></div> 
               {isTaskProgressExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} 
@@ -483,15 +483,15 @@ export default function App() {
             {isTaskProgressExpanded && ( 
               <div className="p-3 space-y-3"> 
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-500">
-                    <div className="flex items-center gap-1"><div className="w-6 h-1.5 rounded-sm bg-red-500"></div>Road</div>
+                  <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 mb-1">
+                    <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded-sm bg-red-500"></div>Road</div>
                     <span>{taskProgress.markedRoad}</span>
                   </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-red-500 transition-all" style={{ width: `${(taskProgress.markedRoad/taskProgress.total)*100}%` }}></div></div>
                 </div> 
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-500">
-                    <div className="flex items-center gap-1"><div className="w-6 h-1.5 border border-yellow-400 bg-transparent rounded-[1px]"></div>Build</div>
+                  <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 mb-1">
+                    <div className="flex items-center gap-1.5"><div className="w-4 h-4 border border-yellow-400 bg-transparent rounded-[1px]"></div>Build</div>
                     <span>{taskProgress.markedBuilding}</span>
                   </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-yellow-500 transition-all" style={{ width: `${(taskProgress.markedBuilding/taskProgress.total)*100}%` }}></div></div>
@@ -503,7 +503,7 @@ export default function App() {
 
         {/* Attribute Table (Aligned with Task Progress Width) */}
         {attributeTableData && ( 
-          <div className={`bg-white/95 shadow-2xl border border-slate-200 rounded-xl overflow-hidden flex flex-col transition-all w-32 ${isTableOpen ? 'h-[400px]' : 'h-10'}`}> 
+          <div className={`bg-white/95 shadow-2xl border border-slate-200 rounded-xl overflow-hidden flex flex-col transition-all w-48 ${isTableOpen ? 'h-[400px]' : 'h-10'}`}> 
             <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b cursor-pointer" onClick={() => setIsTableOpen(!isTableOpen)}> 
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 shrink-0"><Table2 className="w-4 h-4 text-emerald-600 shrink-0" /><span className="truncate">属性</span></div> 
               <Minimize2 className="w-3 h-3" /> 
@@ -520,22 +520,22 @@ export default function App() {
                         const bs = buildingStates[row.id] || 0; 
                         return ( 
                           <tr key={row.id} className={`cursor-pointer border-b hover:bg-slate-50 ${selectedFeatureId === row.id ? 'bg-pink-50 ring-1 ring-pink-200' : ''}`} onClick={() => { setSelectedFeatureId(row.id); const coords = (row.geometry as any).coordinates[0]; if (coords) { const al = coords.map((c: any) => c[1]).reduce((a: any, b: any) => a + b, 0) / coords.length; const an = coords.map((c: any) => c[0]).reduce((a: any, b: any) => a + b, 0) / coords.length; setTargetLocation({ lat: al, lng: an, zoom: 17 }); } }}> 
-                            <td className="px-1.5 py-1.5 font-mono truncate max-w-[32px]">{row.displayId}</td> 
+                            <td className="px-1.5 py-1.5 font-mono truncate max-w-[48px]">{row.displayId}</td> 
                             <td className="px-1 py-1.5">
-                                <div className="flex items-center justify-center gap-1">
+                                <div className="flex items-center justify-center gap-1.5">
                                     {rs === 1 ? (
-                                        <><div className="w-6 h-2 rounded-sm bg-red-500 shrink-0"></div><span className="text-[9px]">1</span></>
+                                        <><div className="w-4 h-4 rounded-sm bg-red-500 shrink-0"></div><span className="text-[9px]">1</span></>
                                     ) : rs === 2 ? (
-                                        <><div className="w-6 h-2 rounded-sm bg-green-500 shrink-0"></div><span className="text-[9px]">0</span></>
+                                        <><div className="w-4 h-4 rounded-sm bg-green-500 shrink-0"></div><span className="text-[9px]">0</span></>
                                     ) : <span className="text-slate-200">-</span>}
                                 </div>
                             </td> 
                             <td className="px-1 py-1.5">
-                                <div className="flex items-center justify-center gap-1">
+                                <div className="flex items-center justify-center gap-1.5">
                                     {bs === 1 ? (
-                                        <><div className="w-6 h-2 border-[1.5px] border-yellow-400 rounded-sm shrink-0"></div><span className="text-[9px]">1</span></>
+                                        <><div className="w-4 h-4 border-[1.5px] border-yellow-400 rounded-sm shrink-0"></div><span className="text-[9px]">1</span></>
                                     ) : bs === 2 ? (
-                                        <><div className="w-6 h-2 border-[1.5px] border-blue-500 rounded-sm shrink-0"></div><span className="text-[9px]">0</span></>
+                                        <><div className="w-4 h-4 border-[1.5px] border-blue-500 rounded-sm shrink-0"></div><span className="text-[9px]">0</span></>
                                     ) : <span className="text-slate-200">-</span>}
                                 </div>
                             </td> 
@@ -607,13 +607,13 @@ export default function App() {
             onClick={() => setLabelMode('road')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'road' ? 'bg-red-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-6 h-2.5 rounded-sm ${labelMode === 'road' ? 'bg-white' : 'bg-red-500'}`}></div> 标路
+            <div className={`w-4 h-4 rounded-sm ${labelMode === 'road' ? 'bg-white' : 'bg-red-500'}`}></div> 标路
           </button> 
           <button 
             onClick={() => setLabelMode('building')} 
             className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${labelMode === 'building' ? 'bg-yellow-500 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
           >
-            <div className={`w-6 h-2.5 border-2 rounded-[2px] ${labelMode === 'building' ? 'border-white' : 'border-yellow-400 bg-transparent'}`}></div> 标建筑
+            <div className={`w-4 h-4 border-2 rounded-[2px] ${labelMode === 'building' ? 'border-white' : 'border-yellow-400 bg-transparent'}`}></div> 标建筑
           </button> 
         </div> 
       </div>
