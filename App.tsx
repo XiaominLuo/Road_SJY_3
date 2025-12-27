@@ -11,6 +11,7 @@ import { AuthModal } from './components/AuthModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { api } from './services/apiService';
 import { Layers, LogOut, Save, CheckCircle2, Building2, AlertTriangle, Trash2, Table2, Minimize2, Loader2, ChevronDown, ChevronUp, Mail, Milestone } from 'lucide-react';
+import { stringToArrayBuffer } from './util';
 
 // Fix for default Leaflet marker icons
 // @ts-ignore
@@ -380,12 +381,23 @@ export default function App() {
             });
             const downloadAndRender = files.map((file: { filename: string; object_key: string }) => {
                 return new Promise<void>((resolve) => {
-                    cos.getObject({ Bucket: cos_info.bucket, Region: cos_info.region, Key: file.object_key, DataType: 'arraybuffer' }, (err: any, data: any) => {
+                    cos.getObject({ Bucket: cos_info.bucket, Region: cos_info.region, Key: file.object_key, DataType: 'arraybuffer' }, (err: COS.CosError, data: COS.GetObjectResult) => {
                         if (err) resolve(); else {
                             (async () => {
                                 try {
-                                    const body = data && (data as any).Body;
-                                    if (body && (body as any).byteLength > 0) await processFileData(file.filename, body as any, targetUser, file.object_key);
+                                    const body = data && data.Body;
+                                    if (body) {
+                                        let bodyBuffer: ArrayBuffer | null = null
+                                        if (body instanceof ArrayBuffer)
+                                            bodyBuffer = body
+                                        else if (body instanceof Blob)
+                                            bodyBuffer = await body.arrayBuffer()
+                                        else
+                                            bodyBuffer = stringToArrayBuffer(body)
+
+                                        if (bodyBuffer)
+                                            processFileData(file.filename, bodyBuffer, targetUser, file.object_key)
+                                    }
                                 } catch (e) {
                                     console.warn(`[Sync] 跳过文件: ${file.filename}`, e);
                                 }
@@ -403,14 +415,14 @@ export default function App() {
         }
     }, []);
 
-    const processFileData = async (fileName: string, buffer: any, targetUser: User, cloudObjectKey?: string) => {
+    const processFileData = async (fileName: string, buffer: ArrayBuffer, targetUser: User, cloudObjectKey?: string) => {
         const fileExt = fileName.split('.').pop()?.toLowerCase();
         const fileNameBase = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
         let geojson: any = null;
         let originalFiles: Record<string, Uint8Array> = {};
         if (fileExt === 'zip') {
             try {
-                const zip = await JSZip.loadAsync(buffer as ArrayBuffer);
+                const zip = await JSZip.loadAsync(buffer);
                 const filePromises: Promise<void>[] = [];
                 zip.forEach((relativePath: string, file: any) => {
                     filePromises.push(file.async("uint8array").then((data: Uint8Array) => {
@@ -430,8 +442,9 @@ export default function App() {
                 return;
             }
         } else if (fileExt === 'json' || fileExt === 'geojson') {
-            geojson = JSON.parse(buffer instanceof Blob ? await buffer.text() : new TextDecoder().decode(buffer));
+            geojson = JSON.parse(new TextDecoder().decode(buffer));
         }
+
         if (geojson) {
             const userPath = `users_data/${targetUser.id}/`;
             let polygonsToAdd: any[] = [];
@@ -630,7 +643,8 @@ export default function App() {
             if (!result) return;
 
             try {
-                await processFileData(fileName, result, user);
+                const resultBuffer = result instanceof ArrayBuffer ? result : stringToArrayBuffer(result);
+                await processFileData(fileName, resultBuffer, user);
             } catch (err: any) {
                 console.error("[Upload] 处理文件失败:", err);
                 alert(`文件解析失败: ${err.message || '格式不正确'}`);
