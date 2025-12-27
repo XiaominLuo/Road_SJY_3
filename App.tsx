@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, LayersControl, ScaleControl, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
+import shp from 'shpjs';
 import COS from 'cos-js-sdk-v5';
 import JSZip from 'jszip';
 import { MapLocation, User, CustomLayer } from './types';
@@ -419,7 +420,7 @@ export default function App() {
                 if (originalFiles['v_labels.json']) geojson = JSON.parse(new TextDecoder().decode(originalFiles['v_labels.json']));
                 else {
                     try {
-                        geojson = await (window as any).shp(buffer);
+                        geojson = await shp(buffer);
                     } catch (e) {
                         return;
                     }
