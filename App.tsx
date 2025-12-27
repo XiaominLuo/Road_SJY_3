@@ -11,7 +11,6 @@ import { AuthModal } from './components/AuthModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { api } from './services/apiService';
 import { Layers, LogOut, Save, CheckCircle2, Building2, AlertTriangle, Trash2, Table2, Minimize2, Loader2, ChevronDown, ChevronUp, Mail, Milestone } from 'lucide-react';
-import { stringToArrayBuffer } from './util';
 
 // Fix for default Leaflet marker icons
 // @ts-ignore
@@ -286,7 +285,7 @@ export default function App() {
             const uploadData = await api.getUploadCredentials(filenames);
             const { credentials, cos_info, files: uploadFiles } = uploadData;
             const cos = new COS({
-                getAuthorization: (_: any, callback: any) => {
+                getAuthorization: (_: COS.GetAuthorizationOptions, callback: (params: COS.GetAuthorizationCallbackParams) => void) => {
                     callback({
                         TmpSecretId: credentials.secret_id,
                         TmpSecretKey: credentials.secret_key,
@@ -314,7 +313,7 @@ export default function App() {
                         let fileData = data;
                         if (name.toLowerCase().endsWith(".dbf") && layer.type === 'grid') {
                             const features = Array.isArray(layer.data) ? layer.data : (layer.data.type === 'FeatureCollection' ? layer.data.features : []);
-                            fileData = updateDbfBinary(new Uint8Array(data as Uint8Array), features, gridStates, buildingStates);
+                            fileData = updateDbfBinary(new Uint8Array(data), features, gridStates, buildingStates);
                         }
                         zip.file(name, fileData);
                     }
@@ -368,12 +367,13 @@ export default function App() {
                 return;
             }
             const cos = new COS({
-                getAuthorization: (_: any, callback: any) => {
+                getAuthorization: (_: COS.GetAuthorizationOptions, callback: (params: COS.GetAuthorizationCallbackParams) => void) => {
                     callback({
                         TmpSecretId: credentials.secret_id,
                         TmpSecretKey: credentials.secret_key,
                         XCosSecurityToken: credentials.token,
                         SecurityToken: credentials.token,
+                        StartTime: credentials.start_time,
                         ExpiredTime: credentials.expire_time
                     });
                 }
@@ -534,11 +534,12 @@ export default function App() {
                     const delData = await api.deleteCloudFileCredentials(layerToDelete.cloudFileName, layerToDelete.cloudObjectKey);
                     const { credentials, cos_info } = delData;
                     const cos = new COS({
-                        getAuthorization: (_: any, cb: any) => cb({
+                        getAuthorization: (_: COS.GetAuthorizationOptions, cb: (params: COS.GetAuthorizationCallbackParams) => void) => cb({
                             TmpSecretId: credentials.secret_id,
                             TmpSecretKey: credentials.secret_key,
                             XCosSecurityToken: credentials.token,
                             SecurityToken: credentials.token,
+                            StartTime: credentials.start_time,
                             ExpiredTime: credentials.expire_time
                         })
                     });
