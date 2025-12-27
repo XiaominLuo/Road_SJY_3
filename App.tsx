@@ -11,6 +11,7 @@ import { AuthModal } from './components/AuthModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { api } from './services/apiService';
 import { Layers, LogOut, Save, CheckCircle2, Building2, AlertTriangle, Trash2, Table2, Minimize2, Loader2, ChevronDown, ChevronUp, Mail, Milestone } from 'lucide-react';
+import { stringToArrayBuffer } from './util';
 
 // Fix for default Leaflet marker icons
 // @ts-ignore
