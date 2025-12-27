@@ -314,7 +314,7 @@ export default function App() {
                         let fileData = data;
                         if (name.toLowerCase().endsWith(".dbf") && layer.type === 'grid') {
                             const features = Array.isArray(layer.data) ? layer.data : (layer.data.type === 'FeatureCollection' ? layer.data.features : []);
-                            fileData = updateDbfBinary(new Uint8Array(data), features, gridStates, buildingStates);
+                            fileData = updateDbfBinary(data, features, gridStates, buildingStates);
                         }
                         zip.file(name, fileData);
                     }
