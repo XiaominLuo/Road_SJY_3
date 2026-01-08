@@ -32,85 +32,140 @@ const STORAGE_KEY_USER = 'geo-scout-user-v2';
 type LabelMode = 'road' | 'building';
 
 const updateDbfBinary = (dbfBuffer: Uint8Array, features: any[], gridStates: Record<string, number>, buildingStates: Record<string, number>): Uint8Array => {
-    const view = new DataView(dbfBuffer.buffer, dbfBuffer.byteOffset, dbfBuffer.byteLength);
-    const numRecords = view.getUint32(4, true);
-    const oldHeaderLen = view.getUint16(8, true);
-    const oldRecordLen = view.getUint16(10, true);
-    let fields: any[] = [];
-    let roadFieldIdx = -1;
-    let buildingFieldIdx = -1;
-    let currentOffset = 1;
-    for (let i = 32; i < oldHeaderLen - 1; i += 32) {
-        let name = "";
-        for (let j = 0; j < 11; j++) {
-            const charCode = view.getUint8(i + j);
-            if (charCode === 0) break;
-            name += String.fromCharCode(charCode);
+    try {
+        const view = new DataView(dbfBuffer.buffer, dbfBuffer.byteOffset, dbfBuffer.byteLength);
+        const numRecords = view.getUint32(4, true);
+        const oldHeaderLen = view.getUint16(8, true);
+        const oldRecordLen = view.getUint16(10, true);
+
+        // Safety check for basic DBF structure validity
+        if (numRecords < 0 || oldHeaderLen < 32 || oldRecordLen < 1) {
+            console.warn("Invalid DBF header detected, skipping binary update");
+            return dbfBuffer;
         }
-        const cleanName = name.trim().toUpperCase();
-        const width = view.getUint8(i + 16);
-        fields.push({ name: cleanName, width, offset: currentOffset });
-        if (cleanName === "ROAD") roadFieldIdx = fields.length - 1;
-        if (cleanName === "BUILDING") buildingFieldIdx = fields.length - 1;
-        currentOffset += width;
-    }
-    const fieldsToAdd = [];
-    if (roadFieldIdx === -1) fieldsToAdd.push("ROAD");
-    if (buildingFieldIdx === -1) fieldsToAdd.push("BUILDING");
-    let finalBuffer = dbfBuffer;
-    let finalHeaderLen = oldHeaderLen;
-    let finalRecordLen = oldRecordLen;
-    if (fieldsToAdd.length > 0) {
-        const addedHeaderSize = fieldsToAdd.length * 32;
-        const addedRecordSize = fieldsToAdd.length;
-        finalHeaderLen = oldHeaderLen + addedHeaderSize;
-        finalRecordLen = oldRecordLen + addedRecordSize;
-        const newTotalSize = finalHeaderLen + (numRecords * finalRecordLen) + 1;
-        const newBuf = new Uint8Array(newTotalSize);
-        const newView = new DataView(newBuf.buffer);
-        newBuf.set(dbfBuffer.slice(0, 32));
-        newView.setUint16(8, finalHeaderLen, true);
-        newView.setUint16(10, finalRecordLen, true);
-        newBuf.set(dbfBuffer.slice(32, oldHeaderLen - 1), 32);
-        let fieldDescPos = oldHeaderLen - 1;
-        fieldsToAdd.forEach(name => {
-            const fieldBuf = new Uint8Array(32);
-            for (let k = 0; k < name.length; k++) fieldBuf[k] = name.charCodeAt(k);
-            fieldBuf[11] = 67;
-            fieldBuf[16] = 1;
-            newBuf.set(fieldBuf, fieldDescPos);
-            const newField = { name, width: 1, offset: currentOffset };
-            if (name === "ROAD") roadFieldIdx = fields.length;
-            if (name === "BUILDING") buildingFieldIdx = fields.length;
-            fields.push(newField);
-            currentOffset += 1;
-            fieldDescPos += 32;
-        });
-        newBuf[finalHeaderLen - 1] = 0x0D;
-        for (let r = 0; r < numRecords; r++) {
-            const oldRecStart = oldHeaderLen + (r * oldRecordLen);
-            const newRecStart = finalHeaderLen + (r * finalRecordLen);
-            newBuf.set(dbfBuffer.slice(oldRecStart, oldRecStart + oldRecordLen), newRecStart);
-            for (let f = 0; f < fieldsToAdd.length; f++) {
-                newBuf[newRecStart + oldRecordLen + f] = 0x20;
+
+        let fields: any[] = [];
+        let roadFieldIdx = -1;
+        let buildingFieldIdx = -1;
+        let currentOffset = 1;
+
+        // Parse existing fields
+        for (let i = 32; i < oldHeaderLen - 1; i += 32) {
+            let name = "";
+            for (let j = 0; j < 11; j++) {
+                const charCode = view.getUint8(i + j);
+                if (charCode === 0) break;
+                name += String.fromCharCode(charCode);
+            }
+            const cleanName = name.trim().toUpperCase();
+            const width = view.getUint8(i + 16);
+            fields.push({ name: cleanName, width, offset: currentOffset });
+            if (cleanName === "ROAD") roadFieldIdx = fields.length - 1;
+            if (cleanName === "BUILDING") buildingFieldIdx = fields.length - 1;
+            currentOffset += width;
+        }
+
+        const fieldsToAdd = [];
+        if (roadFieldIdx === -1) fieldsToAdd.push("ROAD");
+        if (buildingFieldIdx === -1) fieldsToAdd.push("BUILDING");
+
+        let finalBuffer = dbfBuffer;
+        let finalHeaderLen = oldHeaderLen;
+        let finalRecordLen = oldRecordLen;
+
+        if (fieldsToAdd.length > 0) {
+            const addedHeaderSize = fieldsToAdd.length * 32;
+            const addedRecordSize = fieldsToAdd.length;
+            finalHeaderLen = oldHeaderLen + addedHeaderSize;
+            finalRecordLen = oldRecordLen + addedRecordSize;
+
+            const newTotalSize = finalHeaderLen + (numRecords * finalRecordLen) + 1;
+
+            // Check for potential RangeError limits (2GB safety limit for cross-browser compatibility)
+            if (newTotalSize > 2 * 1024 * 1024 * 1024) {
+                console.error(`DBF update skipped: File too large (${(newTotalSize / 1024 / 1024).toFixed(2)} MB)`);
+                return dbfBuffer; // Return original buffer to avoid crash
+            }
+
+            const newBuf = new Uint8Array(newTotalSize);
+            const newView = new DataView(newBuf.buffer);
+
+            // Copy header part 1 (first 32 bytes)
+            newBuf.set(dbfBuffer.slice(0, 32));
+            newView.setUint16(8, finalHeaderLen, true);
+            newView.setUint16(10, finalRecordLen, true);
+
+            // Copy existing field descriptors
+            newBuf.set(dbfBuffer.slice(32, oldHeaderLen - 1), 32);
+
+            // Add new field descriptors
+            let fieldDescPos = oldHeaderLen - 1;
+            fieldsToAdd.forEach(name => {
+                const fieldBuf = new Uint8Array(32);
+                for (let k = 0; k < name.length; k++) fieldBuf[k] = name.charCodeAt(k);
+                fieldBuf[11] = 67; // Type 'C' (Character)
+                fieldBuf[16] = 1;  // Length 1
+                newBuf.set(fieldBuf, fieldDescPos);
+
+                const newField = { name, width: 1, offset: currentOffset };
+                if (name === "ROAD") roadFieldIdx = fields.length;
+                if (name === "BUILDING") buildingFieldIdx = fields.length;
+                fields.push(newField);
+
+                currentOffset += 1;
+                fieldDescPos += 32;
+            });
+
+            // Header terminator
+            newBuf[finalHeaderLen - 1] = 0x0D;
+
+            // Copy records and initialize new fields
+            for (let r = 0; r < numRecords; r++) {
+                const oldRecStart = oldHeaderLen + (r * oldRecordLen);
+                const newRecStart = finalHeaderLen + (r * finalRecordLen);
+
+                // Copy original record data
+                newBuf.set(dbfBuffer.slice(oldRecStart, oldRecStart + oldRecordLen), newRecStart);
+
+                // Initialize new fields with spaces (0x20)
+                for (let f = 0; f < fieldsToAdd.length; f++) {
+                    newBuf[newRecStart + oldRecordLen + f] = 0x20;
+                }
+            }
+
+            // EOF marker
+            newBuf[newTotalSize - 1] = 0x1A;
+            finalBuffer = newBuf;
+        }
+
+        // Update field values based on state
+        const roadMeta = fields[roadFieldIdx];
+        const buildMeta = fields[buildingFieldIdx];
+
+        // Process records
+        const limit = Math.min(numRecords, features.length);
+        for (let i = 0; i < limit; i++) {
+            const feature = features[i];
+            const recStart = finalHeaderLen + (i * finalRecordLen);
+
+            if (roadMeta) {
+                const rState = gridStates[feature.id] || 0;
+                const rChar = rState === 1 ? "1" : (rState === 2 ? "0" : " ");
+                finalBuffer[recStart + roadMeta.offset] = rChar.charCodeAt(0);
+            }
+
+            if (buildMeta) {
+                const bState = buildingStates[feature.id] || 0;
+                const bChar = bState === 1 ? "1" : (bState === 2 ? "0" : " ");
+                finalBuffer[recStart + buildMeta.offset] = bChar.charCodeAt(0);
             }
         }
-        newBuf[newTotalSize - 1] = 0x1A;
-        finalBuffer = newBuf;
+
+        return finalBuffer;
+    } catch (e) {
+        console.error("Error updating DBF binary:", e);
+        return dbfBuffer; // Fallback to original buffer on error
     }
-    const roadMeta = fields[roadFieldIdx];
-    const buildMeta = fields[buildingFieldIdx];
-    for (let i = 0; i < Math.min(numRecords, features.length); i++) {
-        const feature = features[i];
-        const recStart = finalHeaderLen + (i * finalRecordLen);
-        const rState = gridStates[feature.id] || 0;
-        const rChar = rState === 1 ? "1" : (rState === 2 ? "0" : " ");
-        finalBuffer[recStart + roadMeta.offset] = rChar.charCodeAt(0);
-        const bState = buildingStates[feature.id] || 0;
-        const bChar = bState === 1 ? "1" : (bState === 2 ? "0" : " ");
-        finalBuffer[recStart + buildMeta.offset] = bChar.charCodeAt(0);
-    }
-    return finalBuffer;
 };
 
 const generateGrid = (centerLat: number, centerLng: number, latSize: number = 0.001, count: number = 50) => {
@@ -319,17 +374,40 @@ export default function App() {
                         zip.file(name, fileData);
                     }
                 }
-                const geojsonToUpload = JSON.parse(JSON.stringify(layer.data));
-                if (geojsonToUpload.features) {
-                    geojsonToUpload.features.forEach((f: any) => {
-                        const gs = gridStates[f.id] || 0;
-                        const bs = buildingStates[f.id] || 0;
-                        f.properties = f.properties || {};
-                        f.properties.road_state = gs === 1 ? 1 : (gs === 2 ? 0 : -1);
-                        f.properties.building_state = bs === 1 ? 1 : (bs === 2 ? 0 : -1);
-                    });
+                // Optimized: Avoid deep cloning the entire layer data to save memory
+                let geojsonToUpload = layer.data;
+
+                // If features exist, create a shallow copy of the FeatureCollection and map features to update properties
+                // This preserves geometry references instead of duplicating them
+                if (layer.data && layer.data.features && Array.isArray(layer.data.features)) {
+                    geojsonToUpload = {
+                        ...layer.data,
+                        features: layer.data.features.map((f: any) => {
+                            const gs = gridStates[f.id] || 0;
+                            const bs = buildingStates[f.id] || 0;
+                            // Create new properties object
+                            const newProperties = {
+                                ...(f.properties || {}),
+                                road_state: gs === 1 ? 1 : (gs === 2 ? 0 : -1),
+                                building_state: bs === 1 ? 1 : (bs === 2 ? 0 : -1)
+                            };
+                            // Return new feature object with updated properties but shared geometry
+                            return {
+                                ...f,
+                                properties: newProperties
+                            };
+                        })
+                    };
                 }
-                zip.file("v_labels.json", JSON.stringify(geojsonToUpload));
+
+                try {
+                    zip.file("v_labels.json", JSON.stringify(geojsonToUpload));
+                } catch (e) {
+                    console.error("Failed to stringify GeoJSON for upload:", e);
+                    // Attempt fallback or partial upload? For now just log and continue (zip will lack this file or fail later)
+                    throw new Error("GeoJSON too large to upload");
+                }
+
                 const blob = await zip.generateAsync({ type: "blob" });
                 return new Promise<void>((resolve, reject) => {
                     cos.putObject({ Bucket: cos_info.bucket, Region: cos_info.region, Key: targetFile.object_key, Body: blob }, (err: any) => {
