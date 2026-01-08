@@ -670,8 +670,17 @@ export default function App() {
             const currentUser = await api.checkLoginStatus();
             if (currentUser) {
                 setUser(currentUser);
+                // 刷新本地存储的用户信息，保持同步
+                localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
                 handleAutoSync(currentUser);
                 setShowTour(true);
+            } else {
+                // 如果 Session 过期或无效，清理本地登录状态
+                if (localStorage.getItem(STORAGE_KEY_USER)) {
+                    console.log('[Auth] Session expired, clearing local state');
+                    setUser(null);
+                    localStorage.removeItem(STORAGE_KEY_USER);
+                }
             }
         };
         checkSession();
