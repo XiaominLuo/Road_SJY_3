@@ -44,20 +44,33 @@ const updateDbfBinary = (dbfBuffer: Uint8Array, features: any[], gridStates: Rec
             return dbfBuffer;
         }
 
+        // 计算安全的上限：使用文件实际大小和标准 DBF 结构来限制 headerLen
+        // DBF 文件中 header 后面紧跟记录数据，通过查找 0x0D (记录终止符) 来确定真正的 header 结束位置
+        const safeHeaderLimit = Math.min(oldHeaderLen, dbfBuffer.byteLength);
+        console.log(`[updateDbfBinary] oldHeaderLen: ${oldHeaderLen}, byteLength: ${dbfBuffer.byteLength}`)
+
         let fields: any[] = [];
         let roadFieldIdx = -1;
         let buildingFieldIdx = -1;
         let currentOffset = 1;
 
-        // Parse existing fields
-        for (let i = 32; i < oldHeaderLen - 1; i += 32) {
+        // Parse existing fields - 使用 safeHeaderLimit 作为上限，防止 oldHeaderLen 值异常
+        for (let i = 32; i < safeHeaderLimit - 1; i += 32) {
             let name = "";
             for (let j = 0; j < 11; j++) {
+                if (i + j >= safeHeaderLimit) {
+                    console.warn(`[updateDbfBinary] overflow, index: ${i + j}, safeHeaderLimit: ${safeHeaderLimit}`);
+                    break;
+                }
                 const charCode = view.getUint8(i + j);
                 if (charCode === 0) break;
                 name += String.fromCharCode(charCode);
             }
             const cleanName = name.trim().toUpperCase();
+            if (i + 16 >= safeHeaderLimit) {
+                console.warn(`[updateDbfBinary] field width overflow at index: ${i + 16}, safeHeaderLimit: ${safeHeaderLimit}`);
+                break;
+            }
             const width = view.getUint8(i + 16);
             fields.push({ name: cleanName, width, offset: currentOffset });
             if (cleanName === "ROAD") roadFieldIdx = fields.length - 1;
@@ -65,18 +78,23 @@ const updateDbfBinary = (dbfBuffer: Uint8Array, features: any[], gridStates: Rec
             currentOffset += width;
         }
 
+        // 从解析出的字段重新计算正确的 header 长度
+        // 标准 DBF header = 32 字节基础 + (字段数 * 32) + 1 字节终止符
+        const calculatedHeaderLen = 32 + (fields.length * 32) + 1;
+        const actualHeaderLen = Math.min(calculatedHeaderLen, dbfBuffer.byteLength);
+
         const fieldsToAdd = [];
         if (roadFieldIdx === -1) fieldsToAdd.push("ROAD");
         if (buildingFieldIdx === -1) fieldsToAdd.push("BUILDING");
 
         let finalBuffer = dbfBuffer;
-        let finalHeaderLen = oldHeaderLen;
+        let finalHeaderLen = actualHeaderLen;
         let finalRecordLen = oldRecordLen;
 
         if (fieldsToAdd.length > 0) {
             const addedHeaderSize = fieldsToAdd.length * 32;
             const addedRecordSize = fieldsToAdd.length;
-            finalHeaderLen = oldHeaderLen + addedHeaderSize;
+            finalHeaderLen = actualHeaderLen + addedHeaderSize;
             finalRecordLen = oldRecordLen + addedRecordSize;
 
             const newTotalSize = finalHeaderLen + (numRecords * finalRecordLen) + 1;
@@ -96,10 +114,10 @@ const updateDbfBinary = (dbfBuffer: Uint8Array, features: any[], gridStates: Rec
             newView.setUint16(10, finalRecordLen, true);
 
             // Copy existing field descriptors
-            newBuf.set(dbfBuffer.slice(32, oldHeaderLen - 1), 32);
+            newBuf.set(dbfBuffer.slice(32, actualHeaderLen - 1), 32);
 
             // Add new field descriptors
-            let fieldDescPos = oldHeaderLen - 1;
+            let fieldDescPos = actualHeaderLen - 1;
             fieldsToAdd.forEach(name => {
                 const fieldBuf = new Uint8Array(32);
                 for (let k = 0; k < name.length; k++) fieldBuf[k] = name.charCodeAt(k);
@@ -121,7 +139,7 @@ const updateDbfBinary = (dbfBuffer: Uint8Array, features: any[], gridStates: Rec
 
             // Copy records and initialize new fields
             for (let r = 0; r < numRecords; r++) {
-                const oldRecStart = oldHeaderLen + (r * oldRecordLen);
+                const oldRecStart = actualHeaderLen + (r * oldRecordLen);
                 const newRecStart = finalHeaderLen + (r * finalRecordLen);
 
                 // Copy original record data
